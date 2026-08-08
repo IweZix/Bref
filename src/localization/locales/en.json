@@ -1,0 +1,13 @@
+{
+  "common": {
+    "errors": {
+      "required": "This field is required"
+    }
+  },
+  "navbar": {
+    "home": "Home"
+  },
+  "homepage": {
+    "title": "This is the homepage"
+  }
+}

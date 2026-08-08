@@ -1,0 +1,13 @@
+{
+  "common": {
+    "errors": {
+      "required": "Ce champ est requis"
+    }
+  },
+  "navbar": {
+    "home": "Accueil"
+  },
+  "homepage": {
+    "title": "C'est la page d'accueil"
+  }
+}

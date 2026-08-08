@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /Users/luca/Desktop/next.js-boilerplate/src/app/[locales]/)",
+      "Bash(find /Users/luca/Desktop/next.js-boilerplate -maxdepth 2 -type f -name *.config.* -o -name tsconfig.json -o -name .eslintrc*)",
+      "Bash(npm install:*)",
+      "Bash(ls /Users/luca/Desktop/next.js-boilerplate/src/app/[locale]/about/)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "Bash(grep -r \"radix-nova\\\\|nova\" /Users/luca/Desktop/next.js-boilerplate/node_modules/shadcn --include=*.js --include=*.ts)",
+      "WebFetch(domain:github.com)",
+      "Bash(grep -r \"background\\\\|foreground\\\\|primary\" /Users/luca/Desktop/next.js-boilerplate/node_modules/shadcn/dist --include=*.d.ts)",
+      "WebSearch",
+      "WebFetch(domain:allshadcn.com)"
+    ]
+  }
+}
