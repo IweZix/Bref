@@ -1,12 +1,21 @@
 import { Metadata } from 'next';
+import { JetBrains_Mono } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import EnvBanner from '@/components/core/banners/env-banner';
 import ReactQueryProvider from '@/components/core/providers/react-query-provider';
+import SupabaseSessionProvider from '@/components/core/providers/supabase-session-provider';
 import { Provider } from '@/components/ui/provider';
+import { Toaster } from '@/components/ui/toaster';
 import { routing } from '@/localization/routing';
 import type { Locale } from '@/types/Locale';
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  weight: ['400', '500', '700'],
+});
 
 /**
  * Metadata for each page, can be overridden by page-specific metadata (e.g., in page.tsx)
@@ -44,12 +53,19 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={jetbrainsMono.variable}
+      suppressHydrationWarning
+    >
       <body suppressHydrationWarning>
         <Provider>
           <NextIntlClientProvider messages={messages}>
             <EnvBanner />
-            <ReactQueryProvider>{children}</ReactQueryProvider>
+            <ReactQueryProvider>
+              <SupabaseSessionProvider>{children}</SupabaseSessionProvider>
+            </ReactQueryProvider>
+            <Toaster />
           </NextIntlClientProvider>
         </Provider>
       </body>

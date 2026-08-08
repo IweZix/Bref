@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 export enum StorageKeys {
   TOKEN = 'token',
+  DASHBOARD_WARNING_DISMISSED = 'dashboard_warning_dismissed',
 }
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
