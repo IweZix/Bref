@@ -1,5 +1,8 @@
 import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
+import { getClientIp } from '@/lib/shortener/geo';
+import { hashIp } from '@/lib/shortener/ip-hash';
+import { checkRateLimit } from '@/lib/shortener/rate-limit';
 import { isReservedSlug } from '@/lib/shortener/reserved-slugs';
 import { generateSlug } from '@/lib/shortener/slug';
 import { validateDestinationUrl } from '@/lib/shortener/validate-destination';
@@ -45,6 +48,12 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  const ipHash = await hashIp(getClientIp(request));
+  const rateLimit = await checkRateLimit({ sessionId: user.id, ipHash });
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: rateLimit.reason }, { status: 429 });
   }
 
   const body = await request.json().catch(() => null);

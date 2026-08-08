@@ -32,7 +32,7 @@ describe.skipIf(!hasLocalStack)('redirect status code', () => {
   let slug: string;
 
   beforeAll(async () => {
-    await startTestServer({
+    await startTestServer(3100, {
       NEXT_PUBLIC_SUPABASE_URL: SUPABASE_URL as string,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ANON_KEY as string,
       SUPABASE_SERVICE_ROLE_KEY: SERVICE_ROLE_KEY as string,

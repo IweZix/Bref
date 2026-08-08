@@ -35,5 +35,10 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
     env: loadTestEnv(),
+    // Some tests spawn a real `next dev` (see tests/helpers/next-test-server.ts).
+    // Two of those running concurrently from the same project directory fight
+    // over the shared .next build cache and never become ready — run files
+    // one at a time instead of Vitest's default per-file parallelism.
+    fileParallelism: false,
   },
 });
