@@ -1,12 +1,15 @@
 export default function EnvBanner() {
   const env =
     process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || 'local';
+console.log(env);
 
-  const backgroundColor =
-    env === 'production' ? 'green' : env === 'development' ? 'red' : 'purple';
+  if (env === 'production') {
+    return null;
+  }
 
-  const text =
-    env === 'production' ? 'PROD' : env === 'development' ? 'DEV' : 'LOCAL';
+  const backgroundColor = env === 'development' ? 'red' : 'purple';
+
+  const text = env === 'development' ? 'DEV' : 'LOCAL';
 
   return (
     <div
