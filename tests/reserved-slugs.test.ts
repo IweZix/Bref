@@ -21,4 +21,16 @@ describe('isReservedSlug', () => {
     expect(isReservedSlug('aB3xY9z')).toBe(false);
     expect(isReservedSlug('promo-hiver')).toBe(false);
   });
+
+  it('flags frequently-impersonated brands', () => {
+    expect(isReservedSlug('paypal')).toBe(true);
+    expect(isReservedSlug('google')).toBe(true);
+    expect(isReservedSlug('bpost')).toBe(true);
+  });
+
+  it('flags financial and authentication terms', () => {
+    expect(isReservedSlug('login')).toBe(true);
+    expect(isReservedSlug('verify')).toBe(true);
+    expect(isReservedSlug('payment')).toBe(true);
+  });
 });

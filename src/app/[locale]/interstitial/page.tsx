@@ -1,0 +1,63 @@
+import {
+  Link as ChakraLink,
+  Container,
+  Flex,
+  Heading,
+  Stack,
+  Text,
+} from '@chakra-ui/react';
+import { notFound } from 'next/navigation';
+import { resolveSlug } from '@/lib/shortener/resolve-slug';
+import { Link } from '@/localization/navigation';
+
+export default async function InterstitialPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ slug?: string }>;
+}) {
+  const { slug } = await searchParams;
+  if (!slug) notFound();
+
+  const result = await resolveSlug(slug);
+  if (result.status !== 'active') notFound();
+
+  const destinationHost = new URL(result.link.targetUrl).hostname;
+  const continueHref = `/api/r/${encodeURIComponent(slug)}?skip_interstitial=1`;
+  const reportHref = `/report?slug=${encodeURIComponent(slug)}`;
+
+  return (
+    <Flex direction="column" minH="100vh" align="center" justify="center">
+      <Container maxW="md">
+        <Stack
+          gap="4"
+          p="6"
+          borderWidth="1px"
+          borderColor="app-border"
+          borderRadius="lg"
+          bg="app-bg"
+        >
+          <Heading fontFamily="mono" fontSize="lg">
+            Tu vas être redirigé
+          </Heading>
+          <Text fontFamily="mono" color="fg.muted">
+            Ce lien mène vers :
+          </Text>
+          <Text fontFamily="mono" fontWeight="bold" truncate>
+            {destinationHost}
+          </Text>
+          <ChakraLink
+            asChild
+            fontFamily="mono"
+            fontWeight="bold"
+            color="brand.fg"
+          >
+            <a href={continueHref}>Continuer →</a>
+          </ChakraLink>
+          <ChakraLink asChild fontFamily="mono" fontSize="sm" color="fg.subtle">
+            <Link href={reportHref}>Signaler ce lien</Link>
+          </ChakraLink>
+        </Stack>
+      </Container>
+    </Flex>
+  );
+}

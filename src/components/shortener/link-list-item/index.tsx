@@ -10,6 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import { CopyButton } from '@/components/shortener/copy-button';
+import { SlugTypeBadge } from '@/components/shortener/slug-type-badge';
 import { StatusBadge } from '@/components/shortener/status-badge';
 import type { DashboardLink } from '@/lib/shortener/get-dashboard-links';
 import { getLinkStatus } from '@/lib/shortener/link-status';
@@ -52,6 +53,7 @@ export function LinkListItem({ link }: { link: DashboardLink }) {
             <Link href={`/dashboard/${link.slug}`}>{shortUrl}</Link>
           </ChakraLink>
           <StatusBadge status={status} />
+          <SlugTypeBadge isCustomSlug={link.isCustomSlug} />
         </HStack>
         <Text fontFamily="mono" fontSize="sm" color="fg.subtle" truncate>
           {link.targetUrl}

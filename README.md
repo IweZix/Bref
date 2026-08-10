@@ -79,12 +79,34 @@ Supabase's free tier pauses a project after 7 days with no activity. A portfolio
 
 `.github/workflows/keep-alive.yaml` pings `/api/health` (which does one trivial database read) every 3 days via a scheduled GitHub Action. It deliberately runs from **outside** Supabase — a `pg_cron` job running inside the database being pinged is not obviously going to register as "activity" for the pause detector, and this isn't a bet worth making. This was built and verified in the same pass as the dashboard UI, not left for later, on the theory that a paused project during a job search is a dead link on a résumé.
 
+## 7. Custom slugs turn the namespace public — and reuse-after-deletion is the trap
+
+Random slugs (`aB3xY9z`) live in a private, effectively infinite space: nobody wants a specific one, so nobody collides. Letting a user pick their own slug (`bref.link/portfolio`) changes that instantly — the space becomes public and scarce, and it opens problems a random-only shortener never has to think about: squatting, visual confusability (`paypa1` vs `paypal`), and — the least obvious, most dangerous one — **what happens when a claimed slug is deleted**.
+
+**Normalize once, enforce everywhere.** `src/lib/shortener/normalize-slug.ts` (NFKC + lowercase) is the one function creation, the availability-check endpoint, and redirect resolution all call — mirrored exactly in SQL by a `slug_normalized` generated column carrying the actual unique constraint. Two separate implementations of "what counts as the same slug" would eventually drift and produce an unresolvable link; one function used everywhere can't.
+
+```sql
+alter table public.links add column slug_normalized text
+  generated always as (lower(normalize(slug, nfkc))) stored;
+create unique index links_slug_normalized_key on public.links (slug_normalized);
+```
+
+That closes the case-sensitivity gap directly — `MonCV` and `moncv` can't both be claimed, and both resolve the same link. A second generated column, `degarnished_slug`, strips separators and folds the digits a shortener's own random-slug alphabet already avoids for being visually ambiguous (`0`→`o`, `1`→`l`, `5`→`s`), so `paypa1-secure` is rejected outright if `paypalsecure` already exists — a namespace-wide check, not a per-user one.
+
+**Deletion doesn't free a custom slug.** This is the trap: if a deleted slug went straight back into circulation, a stranger could claim it the moment it's freed and inherit the residual real-world traffic from posters, emails, or old shares that already went out under the original owner's name — without hacking anything. `retired_slugs` records every deleted custom slug permanently; creation checks it in addition to the live uniqueness constraint, and blocks anyone except the original retiring session. The dead slug itself resolves to a genuine HTTP **410**, not a 404 — it existed and won't come back to anyone else, which is a different fact than "never existed" and worth saying so on the page a visitor lands on. `tests/slug-reclaim.test.ts` is the test worth reading here: it's the one non-obvious failure mode a naive implementation gets wrong.
+
+**Concurrent claims resolve cleanly, not with a 500.** Two requests for the same slug always race eventually — a pre-check `SELECT` followed by an `INSERT` just moves the race instead of closing it. Creation always inserts directly and treats a unique-violation (`23505`) as an expected outcome, not an error path: one request succeeds, the other gets a clean, actionable conflict. `tests/concurrent-custom-slug-creation.test.ts` fires two genuinely concurrent inserts at the same slug and asserts exactly one wins.
+
+A public, human-chosen slug also raises the ceiling on how convincing a phishing link can look (`bref.link/paypal-secure` reads as official in a way a random string never does) — `src/lib/shortener/brand-mismatch.ts` flags a slug that names a brand but points somewhere that isn't the brand's real domain, an optional pre-redirect interstitial can show the real destination before following it, and a `reports` table with a link on the 404/410/interstitial pages gives anyone a way to flag a link for manual review.
+
 ## What I'd do differently
 
 - **i18n.** The app's copy is hardcoded French rather than routed through `next-intl`'s `useTranslations()`, despite the rest of the codebase (and `CLAUDE.md`) documenting that as the convention. It was a deliberate scope cut to keep the core mechanics (redirect semantics, RLS, caching) the focus rather than touching every component twice. Rewiring ~15 components plus the `en.json` entries is the natural next PR.
 - **Detailed click history in the UI.** The mockups sketch a per-event timeline ("clicked from France, mobile, via slack.com, 18 min ago"); the shipped detail page aggregates into a day-of-week chart and country/referrer/device breakdowns instead. The data (`public.clicks`) already supports the richer view — it just wasn't built.
 - **Custom domains.** Explicitly out of scope for this pass, but the redirect route doesn't assume the app's own hostname anywhere except the self-redirect-loop check at creation time, so it wouldn't require restructuring.
 - **Anonymous → permanent account.** Supabase supports attaching an email to an anonymous session without losing its data. Worth offering as an opt-in once someone actually asks for it — never as a requirement, since that would undercut point 4 above.
+- **Report moderation.** `public.reports` collects abuse reports on custom slugs (§7), but there's no admin UI — reviewing them today means reading the table directly with SQL. The point was to prove the data-capture path exists (and that the underlying risk was thought through), not to build a moderation console for a portfolio project's low real-world volume.
+- **A reserved-word offensive-terms list.** `src/lib/shortener/reserved-slugs.ts` blocks app routes and impersonation-prone brand/financial terms, but deliberately carries no profanity list — a real one needs proper locale coverage and false-positive tuning, and a handful of hardcoded words would give a false sense of coverage without actually providing it.
 
 ## Running it locally
 
@@ -112,7 +134,7 @@ npm test
 
 Most tests are plain unit tests and run with no setup. A few need infrastructure they'll skip themselves without:
 
-- **RLS isolation, aggregation idempotence, rate-limit, and redirect/cache tests** need a local Supabase stack: `npx supabase start` (requires Docker), then `npx supabase status -o env` to populate `.env.test.local` (gitignored; see that file's own header comment for the exact format).
+- **RLS isolation, aggregation idempotence, rate-limit, redirect/cache, and custom-slug tests** (normalization collision, similarity, reclaim, retired-slug status, concurrent creation) need a local Supabase stack: `npx supabase start` (requires Docker), then `npx supabase status -o env` to populate `.env.test.local` (gitignored; see that file's own header comment for the exact format).
 - A couple of those tests spawn a real `next dev` on a fixed port to exercise the redirect route end-to-end — Vitest is configured with `fileParallelism: false` so two of those never run concurrently and fight over the same `.next` build cache.
 
 ## Database

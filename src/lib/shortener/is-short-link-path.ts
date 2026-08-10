@@ -1,7 +1,7 @@
 import { isReservedSlug } from '@/lib/shortener/reserved-slugs';
 import { routing } from '@/localization/routing';
 
-const SLUG_PATTERN = /^\/[a-zA-Z0-9-]+$/;
+const SLUG_PATTERN = /^\/[a-zA-Z0-9_-]+$/;
 
 /**
  * True for a bare-root, single-segment path that should be treated as a short

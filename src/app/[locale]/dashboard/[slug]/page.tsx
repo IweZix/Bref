@@ -9,7 +9,9 @@ import {
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { CopyButton } from '@/components/shortener/copy-button';
+import { DeleteLinkButton } from '@/components/shortener/delete-link-button';
 import { LinkDetailStats } from '@/components/shortener/link-detail-stats';
+import { SlugTypeBadge } from '@/components/shortener/slug-type-badge';
 import { StatusBadge } from '@/components/shortener/status-badge';
 import { ColorModeButton } from '@/components/ui/color-mode';
 import { getLinkDetail } from '@/lib/shortener/get-link-detail';
@@ -84,7 +86,12 @@ export default async function LinkDetailPage({
               /{link.slug}
             </Text>
             <StatusBadge status={status} />
+            <SlugTypeBadge isCustomSlug={link.isCustomSlug} />
             <CopyButton value={shortUrl} size="xs" />
+            <DeleteLinkButton
+              linkId={link.id}
+              isCustomSlug={link.isCustomSlug}
+            />
           </HStack>
           <Text fontFamily="mono" fontSize="sm" color="fg.subtle" truncate>
             {link.targetUrl}
