@@ -1,19 +1,35 @@
 import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
+import { checkCustomSlugRateLimit } from '@/lib/shortener/custom-slug-rate-limit';
 import { getClientIp } from '@/lib/shortener/geo';
 import { hashIp } from '@/lib/shortener/ip-hash';
 import { checkRateLimit } from '@/lib/shortener/rate-limit';
-import { isReservedSlug } from '@/lib/shortener/reserved-slugs';
 import { generateSlug } from '@/lib/shortener/slug';
+import {
+  type CustomSlugValidationReason,
+  validateCustomSlugCandidate,
+} from '@/lib/shortener/validate-custom-slug-candidate';
 import { validateDestinationUrl } from '@/lib/shortener/validate-destination';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 
 // "A handful" per the product decision: random slugs stay uncapped, custom
 // (human-chosen) slugs are capped per anonymous session to blunt squatting.
 const CUSTOM_SLUG_CAP_PER_SESSION = 5;
 const MAX_SLUG_GENERATION_ATTEMPTS = 3;
-const CUSTOM_SLUG_PATTERN = /^[a-zA-Z0-9-]{3,32}$/;
 const UNIQUE_VIOLATION = '23505';
+
+const CUSTOM_SLUG_VALIDATION_ERRORS: Record<
+  CustomSlugValidationReason,
+  string
+> = {
+  'invalid-format': 'Invalid slug format',
+  reserved: 'This slug is reserved',
+  'too-similar': 'This slug looks too similar to an existing link',
+  retired: 'This slug was previously used and is no longer available',
+  'brand-mismatch':
+    "This slug looks like it impersonates a brand but doesn't point to its real domain",
+};
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -25,6 +41,7 @@ function insertLink(
     userId: string;
     title: string | null;
     isCustomSlug: boolean;
+    requiresInterstitial: boolean;
   },
 ) {
   return supabase
@@ -35,6 +52,7 @@ function insertLink(
       user_id: params.userId,
       title: params.title,
       is_custom_slug: params.isCustomSlug,
+      requires_interstitial: params.requiresInterstitial,
     })
     .select()
     .single();
@@ -75,21 +93,30 @@ export async function POST(request: Request) {
       ? body.title.trim().slice(0, 200)
       : null;
 
-  if (typeof body.slug === 'string' && body.slug.trim()) {
-    const requestedSlug = body.slug.trim();
+  const requiresInterstitial = body.requiresInterstitial === true;
 
-    if (!CUSTOM_SLUG_PATTERN.test(requestedSlug)) {
+  if (typeof body.slug === 'string' && body.slug.trim()) {
+    const attemptLimit = await checkCustomSlugRateLimit({
+      sessionId: user.id,
+      ipHash,
+    });
+    if (!attemptLimit.allowed) {
+      return NextResponse.json({ error: attemptLimit.reason }, { status: 429 });
+    }
+
+    const validation = await validateCustomSlugCandidate(
+      createServiceClient(),
+      body.slug,
+      user.id,
+      new URL(destination.url).hostname,
+    );
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: 'Invalid slug format' },
+        { error: CUSTOM_SLUG_VALIDATION_ERRORS[validation.reason] },
         { status: 400 },
       );
     }
-    if (isReservedSlug(requestedSlug)) {
-      return NextResponse.json(
-        { error: 'This slug is reserved' },
-        { status: 400 },
-      );
-    }
+    const requestedSlug = validation.slug;
 
     const { count, error: countError } = await supabase
       .from('links')
@@ -117,6 +144,7 @@ export async function POST(request: Request) {
       userId: user.id,
       title,
       isCustomSlug: true,
+      requiresInterstitial,
     });
 
     if (error) {
@@ -145,6 +173,7 @@ export async function POST(request: Request) {
       userId: user.id,
       title,
       isCustomSlug: false,
+      requiresInterstitial,
     });
 
     if (!error) {

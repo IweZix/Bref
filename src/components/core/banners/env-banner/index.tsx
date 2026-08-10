@@ -1,7 +1,6 @@
 export default function EnvBanner() {
   const env =
     process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || 'local';
-console.log(env);
 
   if (env === 'production') {
     return null;

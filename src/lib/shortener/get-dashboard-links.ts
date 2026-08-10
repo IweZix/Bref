@@ -6,6 +6,7 @@ export type DashboardLink = {
   title: string | null;
   targetUrl: string;
   isActive: boolean;
+  isCustomSlug: boolean;
   expiresAt: string | null;
   createdAt: string;
   clicksLast7Days: number;
@@ -25,7 +26,9 @@ export async function getDashboardLinks(
 ): Promise<DashboardLink[]> {
   const { data: links, error } = await supabase
     .from('links')
-    .select('id, slug, title, target_url, is_active, expires_at, created_at')
+    .select(
+      'id, slug, title, target_url, is_active, is_custom_slug, expires_at, created_at',
+    )
     .order('created_at', { ascending: false });
 
   if (error || !links || links.length === 0) return [];
@@ -56,6 +59,7 @@ export async function getDashboardLinks(
     title: link.title,
     targetUrl: link.target_url,
     isActive: link.is_active,
+    isCustomSlug: link.is_custom_slug,
     expiresAt: link.expires_at,
     createdAt: link.created_at,
     clicksLast7Days: counts.get(link.id)?.clicks ?? 0,

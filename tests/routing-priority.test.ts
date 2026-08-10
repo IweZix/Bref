@@ -27,4 +27,8 @@ describe('isShortLinkPath (routing priority)', () => {
   it('treats a custom slug as a short link', () => {
     expect(isShortLinkPath('/promo-hiver')).toBe(true);
   });
+
+  it('treats a custom slug containing an underscore as a short link', () => {
+    expect(isShortLinkPath('/mon_cv')).toBe(true);
+  });
 });

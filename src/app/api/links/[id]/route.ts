@@ -1,7 +1,9 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
+import { retireSlug } from '@/lib/shortener/retired-slug';
 import { validateDestinationUrl } from '@/lib/shortener/validate-destination';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -96,6 +98,15 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
 
   if (error || !link) {
     return NextResponse.json({ error: 'Link not found' }, { status: 404 });
+  }
+
+  // Only custom slugs get retired — a CSPRNG random slug has no
+  // impersonation value, so nobody would ever try to reclaim it.
+  if (link.is_custom_slug) {
+    await retireSlug(createServiceClient(), {
+      slug: link.slug,
+      userId: user.id,
+    });
   }
 
   // { expire: 0 }, not 'max': 'max' is stale-while-revalidate and could still
