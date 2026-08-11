@@ -23,10 +23,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL('https://tonsite.be'), // base url
   title: {
-    default: 'Website', // default title
+    default: 'Bref.', // default title
     template: '%s – Website', // template for page titles
   },
-  description: 'Default description for the website',
+  description: 'Bref. est un site web qui permet de raccourcir les liens et de les partager facilement.', // default description
+  keywords: ['bref', 'raccourcisseur de liens', 'partage de liens', 'liens courts'], // default keywords
   openGraph: {
     siteName: 'Website',
     locale: 'fr_BE',
