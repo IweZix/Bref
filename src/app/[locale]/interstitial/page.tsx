@@ -13,16 +13,19 @@ import { Link } from '@/localization/navigation';
 export default async function InterstitialPage({
   searchParams,
 }: {
-  searchParams: Promise<{ slug?: string }>;
+  searchParams: Promise<{ slug?: string; s?: string }>;
 }) {
-  const { slug } = await searchParams;
+  const { slug, s } = await searchParams;
   if (!slug) notFound();
 
   const result = await resolveSlug(slug);
   if (result.status !== 'active') notFound();
 
   const destinationHost = new URL(result.link.targetUrl).hostname;
-  const continueHref = `/api/r/${encodeURIComponent(slug)}?skip_interstitial=1`;
+  // Carries the QR source marker through to the redirect route on the far
+  // side of "Continuer" — otherwise a scanned link with an interstitial
+  // would silently lose its source and get recorded as ordinary web traffic.
+  const continueHref = `/api/r/${encodeURIComponent(slug)}?skip_interstitial=1${s ? `&s=${encodeURIComponent(s)}` : ''}`;
   const reportHref = `/report?slug=${encodeURIComponent(slug)}`;
 
   return (

@@ -27,7 +27,7 @@ describe.skipIf(!hasLocalStack)('recordClick resilience', () => {
     });
 
     await expect(
-      recordClick('00000000-0000-0000-0000-000000000000', request),
+      recordClick('00000000-0000-0000-0000-000000000000', request, 'web'),
     ).resolves.toBeUndefined();
     expect(consoleErrorSpy).toHaveBeenCalled();
   });

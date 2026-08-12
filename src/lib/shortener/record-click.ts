@@ -1,4 +1,5 @@
 import { isBot } from '@/lib/shortener/bot-detection';
+import type { ClickSource } from '@/lib/shortener/click-source';
 import { detectDeviceType } from '@/lib/shortener/device-type';
 import { getClientIp, getCountry } from '@/lib/shortener/geo';
 import { getReferrerHost } from '@/lib/shortener/referrer-host';
@@ -14,6 +15,7 @@ import { createServiceClient } from '@/lib/supabase/service';
 export async function recordClick(
   linkId: string,
   request: Request,
+  source: ClickSource,
 ): Promise<void> {
   try {
     const supabase = createServiceClient();
@@ -32,6 +34,7 @@ export async function recordClick(
       referrer_host: referrerHost,
       visitor_hash: visitorHash,
       is_bot: isBot(userAgent),
+      source,
     });
 
     if (error) {

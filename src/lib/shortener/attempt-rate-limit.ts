@@ -37,19 +37,22 @@ async function incrementAndGetCount(
  * existing, already-tested creation-frequency limiter stays untouched.
  */
 export function createAttemptRateLimiter(options: {
-  sessionSubjectType: string;
+  sessionSubjectType?: string;
   ipSubjectType: string;
   maxPerWindow: number;
   reason: string;
 }) {
   return async function checkAttemptRateLimit(params: {
-    sessionId: string;
+    sessionId?: string;
     ipHash: string;
   }): Promise<AttemptRateLimitResult> {
-    const sessionCount = await incrementAndGetCount(
-      options.sessionSubjectType,
-      params.sessionId,
-    );
+    const sessionCount =
+      options.sessionSubjectType && params.sessionId
+        ? await incrementAndGetCount(
+            options.sessionSubjectType,
+            params.sessionId,
+          )
+        : null;
     const ipCount = await incrementAndGetCount(
       options.ipSubjectType,
       params.ipHash,

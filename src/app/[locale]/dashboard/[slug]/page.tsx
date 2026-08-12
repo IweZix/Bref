@@ -11,6 +11,7 @@ import { notFound } from 'next/navigation';
 import { CopyButton } from '@/components/shortener/copy-button';
 import { DeleteLinkButton } from '@/components/shortener/delete-link-button';
 import { LinkDetailStats } from '@/components/shortener/link-detail-stats';
+import { LinkQrCode } from '@/components/shortener/link-qr-code';
 import { SlugTypeBadge } from '@/components/shortener/slug-type-badge';
 import { StatusBadge } from '@/components/shortener/status-badge';
 import { ColorModeButton } from '@/components/ui/color-mode';
@@ -67,42 +68,54 @@ export default async function LinkDetailPage({
           <Link href="/dashboard">{'← tableau de bord'}</Link>
         </ChakraLink>
 
-        <Stack
-          gap="1"
-          mb="8"
-          p="5"
-          borderWidth="1px"
-          borderColor="app-border"
-          borderRadius="lg"
-          bg="app-bg"
-        >
-          {link.title && (
-            <Text fontFamily="mono" fontSize="sm" color="fg.muted">
-              {link.title}
+        <Flex gap="4" wrap="wrap" align="flex-start" mb="8">
+          <Stack
+            gap="1"
+            flex="1"
+            minW="0"
+            p="5"
+            borderWidth="1px"
+            borderColor="app-border"
+            borderRadius="lg"
+            bg="app-bg"
+          >
+            {link.title && (
+              <Text fontFamily="mono" fontSize="sm" color="fg.muted">
+                {link.title}
+              </Text>
+            )}
+            <HStack gap="3" wrap="wrap">
+              <Text fontFamily="mono" fontWeight="bold" fontSize="lg">
+                /{link.slug}
+              </Text>
+              <StatusBadge status={status} />
+              <SlugTypeBadge isCustomSlug={link.isCustomSlug} />
+              <CopyButton value={shortUrl} size="xs" />
+              <DeleteLinkButton
+                linkId={link.id}
+                isCustomSlug={link.isCustomSlug}
+              />
+            </HStack>
+            <Text fontFamily="mono" fontSize="sm" color="fg.subtle" truncate>
+              {link.targetUrl}
+            </Text>
+            <Text fontFamily="mono" fontSize="xs" color="fg.subtle">
+              créé le{' '}
+              {new Date(link.createdAt).toLocaleDateString('fr-FR', {
+                dateStyle: 'long',
+              })}
+            </Text>
+          </Stack>
+
+          {status === 'active' ? (
+            <LinkQrCode slug={link.slug} shortUrl={shortUrl} />
+          ) : (
+            <Text fontFamily="mono" fontSize="sm" color="fg.muted" maxW="xs">
+              Pas de code QR pour un lien{' '}
+              {status === 'disabled' ? 'désactivé' : 'expiré'}.
             </Text>
           )}
-          <HStack gap="3" wrap="wrap">
-            <Text fontFamily="mono" fontWeight="bold" fontSize="lg">
-              /{link.slug}
-            </Text>
-            <StatusBadge status={status} />
-            <SlugTypeBadge isCustomSlug={link.isCustomSlug} />
-            <CopyButton value={shortUrl} size="xs" />
-            <DeleteLinkButton
-              linkId={link.id}
-              isCustomSlug={link.isCustomSlug}
-            />
-          </HStack>
-          <Text fontFamily="mono" fontSize="sm" color="fg.subtle" truncate>
-            {link.targetUrl}
-          </Text>
-          <Text fontFamily="mono" fontSize="xs" color="fg.subtle">
-            créé le{' '}
-            {new Date(link.createdAt).toLocaleDateString('fr-FR', {
-              dateStyle: 'long',
-            })}
-          </Text>
-        </Stack>
+        </Flex>
 
         <LinkDetailStats clicks={clicks} />
       </Container>
