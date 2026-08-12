@@ -99,6 +99,14 @@ That closes the case-sensitivity gap directly — `MonCV` and `moncv` can't both
 
 A public, human-chosen slug also raises the ceiling on how convincing a phishing link can look (`bref.link/paypal-secure` reads as official in a way a random string never does) — `src/lib/shortener/brand-mismatch.ts` flags a slug that names a brand but points somewhere that isn't the brand's real domain, an optional pre-redirect interstitial can show the real destination before following it, and a `reports` table with a link on the 404/410/interstitial pages gives anyone a way to flag a link for manual review.
 
+## 8. QR codes are computed on demand, nothing is stored
+
+Both the SVG (generated client-side, zero server round-trip) and the PNG (generated per-request by a small server route) are derived straight from the short URL at request time — there's no QR image table, no storage bucket, and no cached asset to invalidate when a link's destination or active state changes. Regenerating from a slug is cheaper and strictly safer than storing one: a disabled or expired link's QR starts refusing to render (`404` from `/api/qr/[slug]`) the instant its status flips, with no stale file anywhere to clean up. The PNG route is cached aggressively at the CDN layer for performance, but that's a *staleness window*, not a state store — the actual redirect always re-checks the link's live status on every real visit regardless of what any cached QR image says.
+
+A QR scan leaves exactly one signal: the code encodes the short URL with `?s=qr` appended, and the redirect route records that as a `source` dimension (`'web'` or `'qr'`) on the existing `clicks`/`clicks_daily` tables — not a parallel logging system, so it inherits the same bot-filtering, 90-day retention, and RLS scoping the rest of the click pipeline already has. This makes the QR scan count a **floor, not an exact figure**: any client that strips query strings from a shared/scanned URL (some in-app browsers do this) causes an undercount, never an overcount, and there's no way to independently confirm "a camera pointed at this code" beyond that query parameter surviving the trip.
+
+One more deliberate constraint: the QR's dark-module/light-background colors are hardcoded hex values in `src/lib/shortener/qr-options.ts`, never read from Chakra's theme tokens or `useColorMode()`. A QR code's black/white contrast is a scanning-reliability requirement, not a branding choice — it must render identically regardless of the visitor's OS or app theme.
+
 ## What I'd do differently
 
 - **i18n.** The app's copy is hardcoded French rather than routed through `next-intl`'s `useTranslations()`, despite the rest of the codebase (and `CLAUDE.md`) documenting that as the convention. It was a deliberate scope cut to keep the core mechanics (redirect semantics, RLS, caching) the focus rather than touching every component twice. Rewiring ~15 components plus the `en.json` entries is the natural next PR.
@@ -134,7 +142,7 @@ npm test
 
 Most tests are plain unit tests and run with no setup. A few need infrastructure they'll skip themselves without:
 
-- **RLS isolation, aggregation idempotence, rate-limit, redirect/cache, and custom-slug tests** (normalization collision, similarity, reclaim, retired-slug status, concurrent creation) need a local Supabase stack: `npx supabase start` (requires Docker), then `npx supabase status -o env` to populate `.env.test.local` (gitignored; see that file's own header comment for the exact format).
+- **RLS isolation, aggregation idempotence, rate-limit, redirect/cache, custom-slug, and QR-code tests** (normalization collision, similarity, reclaim, retired-slug status, concurrent creation, cache non-segmentation, click-source recording) need a local Supabase stack: `npx supabase start` (requires Docker), then `npx supabase status -o env` to populate `.env.test.local` (gitignored; see that file's own header comment for the exact format).
 - A couple of those tests spawn a real `next dev` on a fixed port to exercise the redirect route end-to-end — Vitest is configured with `fileParallelism: false` so two of those never run concurrently and fight over the same `.next` build cache.
 
 ## Database

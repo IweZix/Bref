@@ -17,6 +17,7 @@ export type ClickRecord = {
   referrerHost: string | null;
   deviceType: string;
   isBot: boolean;
+  source: string;
 };
 
 const MAX_CLICKS_FETCHED = 1000;
@@ -38,7 +39,7 @@ export async function getLinkDetail(
 
   const { data: clicks } = await supabase
     .from('clicks')
-    .select('clicked_at, country, referrer_host, device_type, is_bot')
+    .select('clicked_at, country, referrer_host, device_type, is_bot, source')
     .eq('link_id', link.id)
     .order('clicked_at', { ascending: false })
     .limit(MAX_CLICKS_FETCHED);
@@ -60,6 +61,7 @@ export async function getLinkDetail(
       referrerHost: click.referrer_host,
       deviceType: click.device_type,
       isBot: click.is_bot,
+      source: click.source,
     })),
   };
 }

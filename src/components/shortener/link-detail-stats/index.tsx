@@ -41,6 +41,11 @@ const DEVICE_LABEL: Record<string, string> = {
   tablet: 'Tablette',
 };
 
+const SOURCE_LABEL: Record<string, string> = {
+  web: 'Web',
+  qr: 'QR code',
+};
+
 export function LinkDetailStats({ clicks }: { clicks: ClickRecord[] }) {
   const [filter, setFilter] = useState<ClickFilter>('humans');
 
@@ -108,6 +113,23 @@ export function LinkDetailStats({ clicks }: { clicks: ClickRecord[] }) {
       ),
     [filteredClicks],
   );
+  const sourceBars = useMemo(
+    () =>
+      countBy(
+        filteredClicks,
+        (click) => SOURCE_LABEL[click.source] ?? click.source,
+      ),
+    [filteredClicks],
+  );
+  // Before any QR has ever been scanned, the split isn't uncertain like a
+  // country or referrer can be — it's trivially "100% Web", which tells the
+  // owner nothing and wrongly implies a QR campaign was tried and fell flat
+  // rather than never having been distributed at all. Hidden entirely
+  // (not even the title) until there's an actual scan to report.
+  const hasQrScans = useMemo(
+    () => filteredClicks.some((click) => click.source === 'qr'),
+    [filteredClicks],
+  );
 
   return (
     <Stack gap="8">
@@ -165,6 +187,8 @@ export function LinkDetailStats({ clicks }: { clicks: ClickRecord[] }) {
       </SimpleGrid>
 
       <PercentageBarList title="Appareil" items={deviceBars} />
+
+      {hasQrScans && <PercentageBarList title="Source" items={sourceBars} />}
     </Stack>
   );
 }
