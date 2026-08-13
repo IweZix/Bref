@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, Text } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 import {
   CartesianGrid,
   Line,
@@ -10,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { tKeys } from '@/localization/tKeys';
 
 export type TimelinePoint = {
   date: string; // pre-formatted short label, e.g. "8 août"
@@ -21,16 +23,22 @@ const GRID_COLOR = '#00000014';
 const AXIS_COLOR = '#8a8577';
 
 export function ClicksTimelineChart({ points }: { points: TimelinePoint[] }) {
+  const t = useTranslations();
   if (points.every((point) => point.clicks === 0)) {
     return (
       <Text fontFamily="mono" fontSize="sm" color="fg.subtle">
-        Pas encore de clics à afficher
+        {t(tKeys.shortener.clicksTimelineChart.emptyState)}
       </Text>
     );
   }
 
   return (
-    <Box h="56" fontFamily="mono" aria-label="Clics dans le temps" role="img">
+    <Box
+      h="56"
+      fontFamily="mono"
+      aria-label={t(tKeys.shortener.clicksTimelineChart.ariaLabel)}
+      role="img"
+    >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={points}
@@ -70,7 +78,7 @@ export function ClicksTimelineChart({ points }: { points: TimelinePoint[] }) {
           <Line
             type="monotone"
             dataKey="clicks"
-            name="clics"
+            name={t(tKeys.shortener.clicksTimelineChart.seriesName)}
             stroke={BRAND_LINE_COLOR}
             strokeWidth={2}
             dot={{ r: 3, fill: BRAND_LINE_COLOR, strokeWidth: 0 }}

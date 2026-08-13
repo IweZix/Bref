@@ -1,8 +1,11 @@
 'use client';
 
 import { Badge } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
+import { tKeys } from '@/localization/tKeys';
 
 export function SlugTypeBadge({ isCustomSlug }: { isCustomSlug: boolean }) {
+  const t = useTranslations();
   if (!isCustomSlug) return null; // random is the unlabeled default, mirroring StatusBadge
 
   return (
@@ -12,7 +15,7 @@ export function SlugTypeBadge({ isCustomSlug }: { isCustomSlug: boolean }) {
       borderRadius="full"
       fontFamily="mono"
     >
-      personnalisé
+      {t(tKeys.shortener.slugTypeBadge.custom)}
     </Badge>
   );
 }

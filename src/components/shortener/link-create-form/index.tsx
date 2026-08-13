@@ -3,12 +3,14 @@
 import { Box, Button, Checkbox, Stack, Text } from '@chakra-ui/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useFormik } from 'formik';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { CopyButton } from '@/components/shortener/copy-button';
 import { TerminalInput } from '@/components/shortener/terminal-input';
 import { toaster } from '@/components/ui/toaster';
 import { normalizeSlug } from '@/lib/shortener/normalize-slug';
 import { validateSlugFormat } from '@/lib/shortener/validate-slug-format';
+import { tKeys } from '@/localization/tKeys';
 
 type CreatedLink = {
   slug: string;
@@ -26,31 +28,48 @@ type AvailabilityResponse = {
   suggestions?: string[];
 };
 
-const FORMAT_ERROR_MESSAGES: Record<string, string> = {
-  'too-short': 'trop court (3 caractères minimum)',
-  'too-long': 'trop long (32 caractères maximum)',
-  'invalid-characters':
-    'caractères non autorisés (minuscules, chiffres, - et _ uniquement)',
-  'edge-hyphen': 'ne peut pas commencer ou finir par un tiret',
-  'consecutive-hyphens': 'pas de tirets consécutifs',
-  'all-digits': 'ne peut pas être composé uniquement de chiffres',
-};
+type Translator = ReturnType<typeof useTranslations>;
 
-const AVAILABILITY_MESSAGES: Record<string, string> = {
-  'invalid-format': 'format invalide',
-  reserved: 'ce slug est réservé',
-  'too-similar': 'ce slug ressemble trop à un lien existant',
-  retired: "ce slug a déjà été utilisé et n'est plus disponible",
-  'brand-mismatch':
-    'ce slug ressemble à une marque mais ne pointe pas vers son domaine réel',
-  taken: 'déjà pris',
-};
+function getFormatErrorMessages(t: Translator): Record<string, string> {
+  return {
+    'too-short': t(tKeys.shortener.linkCreateForm.formatErrors.tooShort),
+    'too-long': t(tKeys.shortener.linkCreateForm.formatErrors.tooLong),
+    'invalid-characters': t(
+      tKeys.shortener.linkCreateForm.formatErrors.invalidCharacters,
+    ),
+    'edge-hyphen': t(tKeys.shortener.linkCreateForm.formatErrors.edgeHyphen),
+    'consecutive-hyphens': t(
+      tKeys.shortener.linkCreateForm.formatErrors.consecutiveHyphens,
+    ),
+    'all-digits': t(tKeys.shortener.linkCreateForm.formatErrors.allDigits),
+  };
+}
 
-async function createLink(params: {
-  targetUrl: string;
-  slug?: string;
-  requiresInterstitial: boolean;
-}): Promise<CreateLinkResponse> {
+function getAvailabilityMessages(t: Translator): Record<string, string> {
+  return {
+    'invalid-format': t(
+      tKeys.shortener.linkCreateForm.availabilityErrors.invalidFormat,
+    ),
+    reserved: t(tKeys.shortener.linkCreateForm.availabilityErrors.reserved),
+    'too-similar': t(
+      tKeys.shortener.linkCreateForm.availabilityErrors.tooSimilar,
+    ),
+    retired: t(tKeys.shortener.linkCreateForm.availabilityErrors.retired),
+    'brand-mismatch': t(
+      tKeys.shortener.linkCreateForm.availabilityErrors.brandMismatch,
+    ),
+    taken: t(tKeys.shortener.linkCreateForm.availabilityErrors.taken),
+  };
+}
+
+async function createLink(
+  params: {
+    targetUrl: string;
+    slug?: string;
+    requiresInterstitial: boolean;
+  },
+  t: Translator,
+): Promise<CreateLinkResponse> {
   const response = await fetch('/api/links', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -58,7 +77,7 @@ async function createLink(params: {
   });
   const body: CreateLinkResponse = await response.json();
   if (!response.ok) {
-    throw new Error(body.error ?? 'Une erreur est survenue');
+    throw new Error(body.error ?? t(tKeys.common.errors.generic));
   }
   return body;
 }
@@ -72,6 +91,10 @@ async function checkAvailability(slug: string): Promise<AvailabilityResponse> {
 }
 
 export function LinkCreateForm() {
+  const t = useTranslations();
+  const FORMAT_ERROR_MESSAGES = getFormatErrorMessages(t);
+  const AVAILABILITY_MESSAGES = getAvailabilityMessages(t);
+
   const [origin, setOrigin] = useState('');
   useEffect(() => setOrigin(window.location.origin), []);
 
@@ -82,7 +105,11 @@ export function LinkCreateForm() {
   const [debouncedSlug, setDebouncedSlug] = useState('');
 
   const mutation = useMutation({
-    mutationFn: createLink,
+    mutationFn: (params: {
+      targetUrl: string;
+      slug?: string;
+      requiresInterstitial: boolean;
+    }) => createLink(params, t),
     onSuccess: (data) => {
       if (data.link) {
         setCreatedLink({
@@ -174,7 +201,7 @@ export function LinkCreateForm() {
             formik.resetForm();
           }}
         >
-          Créer un autre lien
+          {t(tKeys.shortener.linkCreateForm.resetButton)}
         </Button>
       </Stack>
     );
@@ -194,35 +221,47 @@ export function LinkCreateForm() {
     };
   } else if (availabilityQuery.data) {
     if (availabilityQuery.data.available) {
-      slugFeedback = { text: 'disponible', color: 'brand.fg' };
+      slugFeedback = {
+        text: t(tKeys.shortener.linkCreateForm.slugFeedback.available),
+        color: 'brand.fg',
+      };
     } else {
+      const notAvailableText = t(
+        tKeys.shortener.linkCreateForm.slugFeedback.notAvailable,
+      );
       const reasonText = availabilityQuery.data.reason
         ? (AVAILABILITY_MESSAGES[availabilityQuery.data.reason] ??
-          'non disponible')
-        : 'non disponible';
+          notAvailableText)
+        : notAvailableText;
       const suggestions = availabilityQuery.data.suggestions?.join(', ');
       slugFeedback = {
         text: suggestions
-          ? `${reasonText} — essaie : ${suggestions}`
+          ? t(tKeys.shortener.linkCreateForm.slugFeedback.suggestionsHint, {
+              reasonText,
+              suggestions,
+            })
           : reasonText,
         color: 'red.fg',
       };
     }
   } else if (availabilityQuery.isFetching) {
-    slugFeedback = { text: 'vérification…', color: 'fg.subtle' };
+    slugFeedback = {
+      text: t(tKeys.shortener.linkCreateForm.slugFeedback.checking),
+      color: 'fg.subtle',
+    };
   }
 
   return (
     <form onSubmit={formik.handleSubmit}>
       <Stack gap="3">
         <Text fontFamily="mono" color="fg.muted">
-          colle une url longue
+          {t(tKeys.shortener.linkCreateForm.urlLabel)}
         </Text>
         <Stack direction={{ base: 'column', sm: 'row' }} gap="3">
           <Box flex="1">
             <TerminalInput
               name="targetUrl"
-              placeholder="https://exemple.com/chemin/tres/long"
+              placeholder={t(tKeys.shortener.linkCreateForm.urlPlaceholder)}
               value={formik.values.targetUrl}
               onChange={formik.handleChange}
               required
@@ -236,7 +275,7 @@ export function LinkCreateForm() {
             fontWeight="bold"
             loading={mutation.isPending}
           >
-            Raccourcir
+            {t(tKeys.shortener.linkCreateForm.submit)}
           </Button>
         </Stack>
 
@@ -249,7 +288,7 @@ export function LinkCreateForm() {
             size="sm"
             onClick={() => setShowCustomSlug(true)}
           >
-            Personnaliser le lien
+            {t(tKeys.shortener.linkCreateForm.customizeToggle)}
           </Button>
         ) : (
           <Stack gap="1">
@@ -260,7 +299,9 @@ export function LinkCreateForm() {
               <Box flex="1">
                 <TerminalInput
                   name="slug"
-                  placeholder="mon-lien"
+                  placeholder={t(
+                    tKeys.shortener.linkCreateForm.slugPlaceholder,
+                  )}
                   value={formik.values.slug}
                   onChange={formik.handleChange}
                 />
@@ -284,7 +325,7 @@ export function LinkCreateForm() {
               <Checkbox.HiddenInput />
               <Checkbox.Control />
               <Checkbox.Label fontFamily="mono" color="fg.muted">
-                Afficher un avertissement avant la redirection
+                {t(tKeys.shortener.linkCreateForm.interstitialCheckboxLabel)}
               </Checkbox.Label>
             </Checkbox.Root>
           </Stack>

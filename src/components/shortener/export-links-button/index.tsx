@@ -1,9 +1,13 @@
 'use client';
 
 import { Button } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 import { toaster } from '@/components/ui/toaster';
+import { tKeys } from '@/localization/tKeys';
 
 export function ExportLinksButton() {
+  const t = useTranslations();
+
   async function handleExport() {
     try {
       const response = await fetch('/api/links/export');
@@ -13,12 +17,12 @@ export function ExportLinksButton() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = 'mes-liens.json';
+      anchor.download = t(tKeys.shortener.exportLinksButton.filename);
       anchor.click();
       URL.revokeObjectURL(url);
     } catch {
       toaster.create({
-        description: "Impossible d'exporter les liens",
+        description: t(tKeys.shortener.exportLinksButton.exportError),
         type: 'error',
       });
     }
@@ -32,7 +36,7 @@ export function ExportLinksButton() {
       fontFamily="mono"
       size="sm"
     >
-      Exporter mes liens
+      {t(tKeys.shortener.exportLinksButton.button)}
     </Button>
   );
 }

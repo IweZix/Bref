@@ -1,7 +1,8 @@
 {
   "common": {
     "errors": {
-      "required": "Ce champ est requis"
+      "required": "Ce champ est requis",
+      "generic": "Une erreur est survenue"
     }
   },
   "navbar": {
@@ -9,5 +10,169 @@
   },
   "homepage": {
     "title": "C'est la page d'accueil"
+  },
+  "shortener": {
+    "clicksTimelineChart": {
+      "emptyState": "Pas encore de clics à afficher",
+      "ariaLabel": "Clics dans le temps",
+      "seriesName": "clics"
+    },
+    "slugTypeBadge": {
+      "custom": "personnalisé"
+    },
+    "percentageBarList": {
+      "emptyState": "Pas encore de données"
+    },
+    "copyButton": {
+      "toastSuccess": "Lien copié",
+      "toastError": "Impossible de copier le lien",
+      "copied": "Copié !",
+      "copy": "Copier"
+    },
+    "deleteLinkButton": {
+      "trigger": "Supprimer",
+      "dialogTitle": "Supprimer ce lien ?",
+      "dialogBodyCustomSlug": "Ce slug personnalisé sera retiré : personne d'autre ne pourra le reprendre, mais tu pourras le récupérer depuis cette session.",
+      "dialogBodyDefault": "Ce lien sera définitivement supprimé.",
+      "cancel": "Annuler",
+      "confirm": "Supprimer"
+    },
+    "linkCreateForm": {
+      "formatErrors": {
+        "tooShort": "trop court (3 caractères minimum)",
+        "tooLong": "trop long (32 caractères maximum)",
+        "invalidCharacters": "caractères non autorisés (minuscules, chiffres, - et _ uniquement)",
+        "edgeHyphen": "ne peut pas commencer ou finir par un tiret",
+        "consecutiveHyphens": "pas de tirets consécutifs",
+        "allDigits": "ne peut pas être composé uniquement de chiffres"
+      },
+      "availabilityErrors": {
+        "invalidFormat": "format invalide",
+        "reserved": "ce slug est réservé",
+        "tooSimilar": "ce slug ressemble trop à un lien existant",
+        "retired": "ce slug a déjà été utilisé et n'est plus disponible",
+        "brandMismatch": "ce slug ressemble à une marque mais ne pointe pas vers son domaine réel",
+        "taken": "déjà pris"
+      },
+      "resetButton": "Créer un autre lien",
+      "slugFeedback": {
+        "available": "disponible",
+        "notAvailable": "non disponible",
+        "suggestionsHint": "{reasonText} — essaie : {suggestions}",
+        "checking": "vérification…"
+      },
+      "urlLabel": "colle une url longue",
+      "urlPlaceholder": "https://exemple.com/chemin/tres/long",
+      "submit": "Raccourcir",
+      "customizeToggle": "Personnaliser le lien",
+      "slugPlaceholder": "mon-lien",
+      "interstitialCheckboxLabel": "Afficher un avertissement avant la redirection"
+    },
+    "exportLinksButton": {
+      "filename": "mes-liens.json",
+      "exportError": "Impossible d'exporter les liens",
+      "button": "Exporter mes liens"
+    },
+    "statusBadge": {
+      "active": "actif",
+      "disabled": "désactivé",
+      "expired": "expiré"
+    },
+    "linkDetailStats": {
+      "unknown": "Inconnu",
+      "deviceLabel": {
+        "mobile": "Mobile",
+        "desktop": "Ordinateur",
+        "tablet": "Tablette"
+      },
+      "sourceLabel": {
+        "web": "Web",
+        "qr": "QR code"
+      },
+      "directAccess": "Accès direct",
+      "humanClicks": "clics humains",
+      "botPreviews": "aperçus de robots",
+      "timelineHeading": "Chronologie",
+      "countryTitle": "Pays",
+      "referrerTitle": "Référent",
+      "deviceTitle": "Appareil",
+      "sourceTitle": "Source"
+    },
+    "linkListItem": {
+      "clicksPerWeek": "clics / 7j",
+      "previewsCount": "+{count} aperçus"
+    },
+    "linkQrCode": {
+      "filename": "blip-{slug}.svg",
+      "ariaLabel": "Code QR menant vers {shortUrl}",
+      "downloadSvg": "Télécharger en SVG",
+      "pngScreen": "PNG écran",
+      "pngPrint": "PNG impression"
+    },
+    "reportForm": {
+      "successMessage": "Merci, ton signalement a été transmis.",
+      "reportedLinkLabel": "lien signalé : /{slug}",
+      "reasonPlaceholder": "Pourquoi ce lien te semble-t-il problématique ?",
+      "submit": "Signaler"
+    },
+    "browserWarningBanner": {
+      "body": "rattachés à ce navigateur, pas à un compte — vider tes cookies les rend introuvables ici (ils redirigent toujours)",
+      "closeAriaLabel": "Fermer l'avertissement"
+    },
+    "charts": {
+      "dayOfWeek": {
+        "short": {
+          "sun": "D",
+          "mon": "L",
+          "tue": "M",
+          "wed": "M",
+          "thu": "J",
+          "fri": "V",
+          "sat": "S"
+        }
+      }
+    },
+    "dayOfWeekChart": {
+      "heading": "clics par jour, 7 derniers jours"
+    },
+    "botToggle": {
+      "humans": "Humains",
+      "bots": "Robots",
+      "all": "Tout"
+    },
+    "linkList": {
+      "emptyStateTitle": "Aucun lien pour l'instant",
+      "emptyStateDescription": "Les liens que tu crées apparaîtront ici, avec leurs statistiques de clics.",
+      "linkCount": "{count, plural, one {# lien} other {# liens}}",
+      "sortRecent": "Récents",
+      "sortPopular": "Populaires"
+    },
+    "pages": {
+      "home": {
+        "dashboardLink": "tableau de bord",
+        "footerTrustCopy": "aucune IP stockée · aucun cookie de suivi · aucun compte"
+      },
+      "dashboard": {
+        "heading": "tableau de bord"
+      },
+      "linkDetail": {
+        "backToDashboard": "← tableau de bord",
+        "createdOn": "créé le {date}",
+        "noQrCode": "Pas de code QR pour un lien {status}."
+      },
+      "interstitial": {
+        "heading": "Tu vas être redirigé",
+        "body": "Ce lien mène vers :",
+        "continueButton": "Continuer →"
+      },
+      "linkNotFound": {
+        "heading": "Lien introuvable",
+        "body": "Ce lien court n'existe pas, a été désactivé, ou a expiré."
+      },
+      "report": {
+        "heading": "Signaler un lien"
+      },
+      "reportLinkAction": "Signaler ce lien"
+    }
   }
 }

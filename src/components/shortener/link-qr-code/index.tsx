@@ -1,12 +1,14 @@
 'use client';
 
 import { Box, Button, HStack, Stack, Text } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 import QRCode from 'qrcode';
 import { useEffect, useState } from 'react';
 import {
   buildQrTargetUrl,
   getQrRenderOptions,
 } from '@/lib/shortener/qr-options';
+import { tKeys } from '@/localization/tKeys';
 
 const QR_DISPLAY_SIZE_PX = 160;
 
@@ -17,6 +19,7 @@ export function LinkQrCode({
   slug: string;
   shortUrl: string;
 }) {
+  const t = useTranslations();
   const [svgMarkup, setSvgMarkup] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,7 +42,7 @@ export function LinkQrCode({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `blip-${slug}.svg`;
+    a.download = t(tKeys.shortener.linkQrCode.filename, { slug });
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -56,7 +59,7 @@ export function LinkQrCode({
     >
       <Box
         role="img"
-        aria-label={`Code QR menant vers ${shortUrl}`}
+        aria-label={t(tKeys.shortener.linkQrCode.ariaLabel, { shortUrl })}
         w={`${QR_DISPLAY_SIZE_PX}px`}
         h={`${QR_DISPLAY_SIZE_PX}px`}
         // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG markup generated locally from a URL we control (buildQrTargetUrl(shortUrl)), never from user input at render time — same trusted-local-markup posture as chakra-cache.tsx's existing use of this prop.
@@ -73,16 +76,16 @@ export function LinkQrCode({
           colorPalette="brand"
           fontFamily="mono"
         >
-          Télécharger en SVG
+          {t(tKeys.shortener.linkQrCode.downloadSvg)}
         </Button>
         <Button asChild size="xs" variant="outline" fontFamily="mono">
           <a href={`/api/qr/${encodeURIComponent(slug)}?size=screen`}>
-            PNG écran
+            {t(tKeys.shortener.linkQrCode.pngScreen)}
           </a>
         </Button>
         <Button asChild size="xs" variant="outline" fontFamily="mono">
           <a href={`/api/qr/${encodeURIComponent(slug)}?size=print`}>
-            PNG impression
+            {t(tKeys.shortener.linkQrCode.pngPrint)}
           </a>
         </Button>
       </HStack>

@@ -1,13 +1,19 @@
 'use client';
 
 import { Badge } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 import type { LinkStatus } from '@/lib/shortener/link-status';
+import { tKeys } from '@/localization/tKeys';
 
-const STATUS_LABEL: Record<LinkStatus, string> = {
-  active: 'actif',
-  disabled: 'désactivé',
-  expired: 'expiré',
-};
+type Translator = ReturnType<typeof useTranslations>;
+
+function getStatusLabels(t: Translator): Record<LinkStatus, string> {
+  return {
+    active: t(tKeys.shortener.statusBadge.active),
+    disabled: t(tKeys.shortener.statusBadge.disabled),
+    expired: t(tKeys.shortener.statusBadge.expired),
+  };
+}
 
 const STATUS_COLOR_PALETTE: Record<LinkStatus, string> = {
   active: 'brand',
@@ -16,7 +22,10 @@ const STATUS_COLOR_PALETTE: Record<LinkStatus, string> = {
 };
 
 export function StatusBadge({ status }: { status: LinkStatus }) {
+  const t = useTranslations();
   if (status === 'active') return null; // "actif" is the unlabeled default state, per the mockup
+
+  const statusLabel = getStatusLabels(t);
 
   return (
     <Badge
@@ -25,7 +34,7 @@ export function StatusBadge({ status }: { status: LinkStatus }) {
       borderRadius="full"
       fontFamily="mono"
     >
-      {STATUS_LABEL[status]}
+      {statusLabel[status]}
     </Badge>
   );
 }

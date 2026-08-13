@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, HStack, SimpleGrid, Stack, Text } from '@chakra-ui/react';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { BotToggle, type ClickFilter } from '@/components/shortener/bot-toggle';
 import {
@@ -10,12 +11,9 @@ import {
 import { DayOfWeekChart } from '@/components/shortener/day-of-week-chart';
 import { PercentageBarList } from '@/components/shortener/percentage-bar-list';
 import type { ClickRecord } from '@/lib/shortener/get-link-detail';
+import { tKeys } from '@/localization/tKeys';
 
 const TIMELINE_DAYS = 14;
-const dayFormatter = new Intl.DateTimeFormat('fr-FR', {
-  day: 'numeric',
-  month: 'short',
-});
 
 function toDayKey(iso: string): string {
   return iso.slice(0, 10); // YYYY-MM-DD, UTC-based grouping
@@ -24,10 +22,11 @@ function toDayKey(iso: string): string {
 function countBy<T>(
   items: T[],
   keyOf: (item: T) => string | null,
+  unknownLabel: string,
 ): { label: string; count: number }[] {
   const counts = new Map<string, number>();
   for (const item of items) {
-    const key = keyOf(item) ?? 'Inconnu';
+    const key = keyOf(item) ?? unknownLabel;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return [...counts.entries()]
@@ -35,18 +34,30 @@ function countBy<T>(
     .sort((a, b) => b.count - a.count);
 }
 
-const DEVICE_LABEL: Record<string, string> = {
-  mobile: 'Mobile',
-  desktop: 'Ordinateur',
-  tablet: 'Tablette',
-};
+type Translator = ReturnType<typeof useTranslations>;
 
-const SOURCE_LABEL: Record<string, string> = {
-  web: 'Web',
-  qr: 'QR code',
-};
+function getDeviceLabels(t: Translator): Record<string, string> {
+  return {
+    mobile: t(tKeys.shortener.linkDetailStats.deviceLabel.mobile),
+    desktop: t(tKeys.shortener.linkDetailStats.deviceLabel.desktop),
+    tablet: t(tKeys.shortener.linkDetailStats.deviceLabel.tablet),
+  };
+}
+
+function getSourceLabels(t: Translator): Record<string, string> {
+  return {
+    web: t(tKeys.shortener.linkDetailStats.sourceLabel.web),
+    qr: t(tKeys.shortener.linkDetailStats.sourceLabel.qr),
+  };
+}
 
 export function LinkDetailStats({ clicks }: { clicks: ClickRecord[] }) {
+  const t = useTranslations();
+  const format = useFormatter();
+  const unknownLabel = t(tKeys.shortener.linkDetailStats.unknown);
+  const directAccessLabel = t(tKeys.shortener.linkDetailStats.directAccess);
+  const DEVICE_LABEL = getDeviceLabels(t);
+  const SOURCE_LABEL = getSourceLabels(t);
   const [filter, setFilter] = useState<ClickFilter>('humans');
 
   const humanCount = useMemo(
@@ -80,10 +91,10 @@ export function LinkDetailStats({ clicks }: { clicks: ClickRecord[] }) {
     }
 
     return days.map(({ key, date }) => ({
-      date: dayFormatter.format(date),
+      date: format.dateTime(date, { day: 'numeric', month: 'short' }),
       clicks: countsByDayKey.get(key) ?? 0,
     }));
-  }, [filteredClicks]);
+  }, [filteredClicks, format]);
 
   const countsByDayOfWeek = useMemo(() => {
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -97,29 +108,35 @@ export function LinkDetailStats({ clicks }: { clicks: ClickRecord[] }) {
   }, [filteredClicks]);
 
   const countryBars = useMemo(
-    () => countBy(filteredClicks, (click) => click.country),
-    [filteredClicks],
+    () => countBy(filteredClicks, (click) => click.country, unknownLabel),
+    [filteredClicks, unknownLabel],
   );
   const referrerBars = useMemo(
     () =>
-      countBy(filteredClicks, (click) => click.referrerHost ?? 'Accès direct'),
-    [filteredClicks],
+      countBy(
+        filteredClicks,
+        (click) => click.referrerHost ?? directAccessLabel,
+        unknownLabel,
+      ),
+    [filteredClicks, directAccessLabel, unknownLabel],
   );
   const deviceBars = useMemo(
     () =>
       countBy(
         filteredClicks,
         (click) => DEVICE_LABEL[click.deviceType] ?? click.deviceType,
+        unknownLabel,
       ),
-    [filteredClicks],
+    [filteredClicks, DEVICE_LABEL, unknownLabel],
   );
   const sourceBars = useMemo(
     () =>
       countBy(
         filteredClicks,
         (click) => SOURCE_LABEL[click.source] ?? click.source,
+        unknownLabel,
       ),
-    [filteredClicks],
+    [filteredClicks, SOURCE_LABEL, unknownLabel],
   );
   // Before any QR has ever been scanned, the split isn't uncertain like a
   // country or referrer can be — it's trivially "100% Web", which tells the
@@ -147,7 +164,7 @@ export function LinkDetailStats({ clicks }: { clicks: ClickRecord[] }) {
             {humanCount}
           </Text>
           <Text fontFamily="mono" fontSize="sm" color="fg.muted">
-            clics humains
+            {t(tKeys.shortener.linkDetailStats.humanClicks)}
           </Text>
         </Stack>
         <Stack
@@ -163,14 +180,14 @@ export function LinkDetailStats({ clicks }: { clicks: ClickRecord[] }) {
             {botCount}
           </Text>
           <Text fontFamily="mono" fontSize="sm" color="fg.muted">
-            aperçus de robots
+            {t(tKeys.shortener.linkDetailStats.botPreviews)}
           </Text>
         </Stack>
       </SimpleGrid>
 
       <HStack justify="space-between" wrap="wrap" gap="3">
         <Text fontFamily="mono" fontWeight="bold" fontSize="sm">
-          Chronologie
+          {t(tKeys.shortener.linkDetailStats.timelineHeading)}
         </Text>
         <BotToggle value={filter} onChange={setFilter} />
       </HStack>
@@ -182,13 +199,27 @@ export function LinkDetailStats({ clicks }: { clicks: ClickRecord[] }) {
       <DayOfWeekChart countsByDay={countsByDayOfWeek} />
 
       <SimpleGrid columns={{ base: 1, md: 2 }} gap="8">
-        <PercentageBarList title="Pays" items={countryBars} />
-        <PercentageBarList title="Référent" items={referrerBars} />
+        <PercentageBarList
+          title={t(tKeys.shortener.linkDetailStats.countryTitle)}
+          items={countryBars}
+        />
+        <PercentageBarList
+          title={t(tKeys.shortener.linkDetailStats.referrerTitle)}
+          items={referrerBars}
+        />
       </SimpleGrid>
 
-      <PercentageBarList title="Appareil" items={deviceBars} />
+      <PercentageBarList
+        title={t(tKeys.shortener.linkDetailStats.deviceTitle)}
+        items={deviceBars}
+      />
 
-      {hasQrScans && <PercentageBarList title="Source" items={sourceBars} />}
+      {hasQrScans && (
+        <PercentageBarList
+          title={t(tKeys.shortener.linkDetailStats.sourceTitle)}
+          items={sourceBars}
+        />
+      )}
     </Stack>
   );
 }

@@ -8,6 +8,7 @@ import {
   Stack,
   Text,
 } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { CopyButton } from '@/components/shortener/copy-button';
 import { SlugTypeBadge } from '@/components/shortener/slug-type-badge';
@@ -15,8 +16,10 @@ import { StatusBadge } from '@/components/shortener/status-badge';
 import type { DashboardLink } from '@/lib/shortener/get-dashboard-links';
 import { getLinkStatus } from '@/lib/shortener/link-status';
 import { Link } from '@/localization/navigation';
+import { tKeys } from '@/localization/tKeys';
 
 export function LinkListItem({ link }: { link: DashboardLink }) {
+  const t = useTranslations();
   const [origin, setOrigin] = useState('');
   useEffect(() => setOrigin(window.location.origin), []);
 
@@ -65,11 +68,13 @@ export function LinkListItem({ link }: { link: DashboardLink }) {
           {link.clicksLast7Days}
         </Text>
         <Text fontFamily="mono" fontSize="xs" color="fg.subtle">
-          clics / 7j
+          {t(tKeys.shortener.linkListItem.clicksPerWeek)}
         </Text>
         {link.previewsLast7Days > 0 && (
           <Text fontFamily="mono" fontSize="xs" color="fg.subtle">
-            +{link.previewsLast7Days} aperçus
+            {t(tKeys.shortener.linkListItem.previewsCount, {
+              count: link.previewsLast7Days,
+            })}
           </Text>
         )}
       </Box>

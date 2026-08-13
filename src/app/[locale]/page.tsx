@@ -6,11 +6,14 @@ import {
   Heading,
   Text,
 } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 import { LinkCreateForm } from '@/components/shortener/link-create-form';
 import { ColorModeButton } from '@/components/ui/color-mode';
 import { Link } from '@/localization/navigation';
+import { tKeys } from '@/localization/tKeys';
 
 export default function Home() {
+  const t = useTranslations();
   return (
     <Flex direction="column" minH="100vh">
       <Flex
@@ -31,7 +34,9 @@ export default function Home() {
             color="fg.muted"
             _hover={{ color: 'brand.fg' }}
           >
-            <Link href="/dashboard">tableau de bord</Link>
+            <Link href="/dashboard">
+              {t(tKeys.shortener.pages.home.dashboardLink)}
+            </Link>
           </ChakraLink>
           <ColorModeButton />
         </Flex>
@@ -51,9 +56,7 @@ export default function Home() {
         fontSize="xs"
         color="fg.subtle"
       >
-        <Text>
-          {'// aucune IP stockée · aucun cookie de suivi · aucun compte'}
-        </Text>
+        <Text>{`// ${t(tKeys.shortener.pages.home.footerTrustCopy)}`}</Text>
       </Box>
     </Flex>
   );

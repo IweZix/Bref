@@ -1,7 +1,8 @@
 {
   "common": {
     "errors": {
-      "required": "This field is required"
+      "required": "This field is required",
+      "generic": "Something went wrong"
     }
   },
   "navbar": {
@@ -9,5 +10,169 @@
   },
   "homepage": {
     "title": "This is the homepage"
+  },
+  "shortener": {
+    "clicksTimelineChart": {
+      "emptyState": "No clicks to show yet",
+      "ariaLabel": "Clicks over time",
+      "seriesName": "clicks"
+    },
+    "slugTypeBadge": {
+      "custom": "custom"
+    },
+    "percentageBarList": {
+      "emptyState": "No data yet"
+    },
+    "copyButton": {
+      "toastSuccess": "Link copied",
+      "toastError": "Unable to copy the link",
+      "copied": "Copied!",
+      "copy": "Copy"
+    },
+    "deleteLinkButton": {
+      "trigger": "Delete",
+      "dialogTitle": "Delete this link?",
+      "dialogBodyCustomSlug": "This custom slug will be released: no one else will be able to claim it, but you can reclaim it from this session.",
+      "dialogBodyDefault": "This link will be permanently deleted.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "linkCreateForm": {
+      "formatErrors": {
+        "tooShort": "too short (3 characters minimum)",
+        "tooLong": "too long (32 characters maximum)",
+        "invalidCharacters": "characters not allowed (lowercase letters, digits, - and _ only)",
+        "edgeHyphen": "can't start or end with a hyphen",
+        "consecutiveHyphens": "no consecutive hyphens",
+        "allDigits": "can't be made up of digits only"
+      },
+      "availabilityErrors": {
+        "invalidFormat": "invalid format",
+        "reserved": "this slug is reserved",
+        "tooSimilar": "this slug looks too similar to an existing link",
+        "retired": "this slug has already been used and is no longer available",
+        "brandMismatch": "this slug looks like a brand name but doesn't point to its real domain",
+        "taken": "already taken"
+      },
+      "resetButton": "Create another link",
+      "slugFeedback": {
+        "available": "available",
+        "notAvailable": "not available",
+        "suggestionsHint": "{reasonText} — try: {suggestions}",
+        "checking": "checking…"
+      },
+      "urlLabel": "paste a long url",
+      "urlPlaceholder": "https://example.com/very/long/path",
+      "submit": "Shorten",
+      "customizeToggle": "Customize the link",
+      "slugPlaceholder": "my-link",
+      "interstitialCheckboxLabel": "Show a warning before redirecting"
+    },
+    "exportLinksButton": {
+      "filename": "my-links.json",
+      "exportError": "Unable to export your links",
+      "button": "Export my links"
+    },
+    "statusBadge": {
+      "active": "active",
+      "disabled": "disabled",
+      "expired": "expired"
+    },
+    "linkDetailStats": {
+      "unknown": "Unknown",
+      "deviceLabel": {
+        "mobile": "Mobile",
+        "desktop": "Desktop",
+        "tablet": "Tablet"
+      },
+      "sourceLabel": {
+        "web": "Web",
+        "qr": "QR code"
+      },
+      "directAccess": "Direct access",
+      "humanClicks": "human clicks",
+      "botPreviews": "bot previews",
+      "timelineHeading": "Timeline",
+      "countryTitle": "Country",
+      "referrerTitle": "Referrer",
+      "deviceTitle": "Device",
+      "sourceTitle": "Source"
+    },
+    "linkListItem": {
+      "clicksPerWeek": "clicks / 7d",
+      "previewsCount": "+{count} previews"
+    },
+    "linkQrCode": {
+      "filename": "blip-{slug}.svg",
+      "ariaLabel": "QR code linking to {shortUrl}",
+      "downloadSvg": "Download as SVG",
+      "pngScreen": "PNG for screen",
+      "pngPrint": "PNG for print"
+    },
+    "reportForm": {
+      "successMessage": "Thanks, your report has been submitted.",
+      "reportedLinkLabel": "link reported: /{slug}",
+      "reasonPlaceholder": "Why does this link seem problematic to you?",
+      "submit": "Report"
+    },
+    "browserWarningBanner": {
+      "body": "tied to this browser, not an account — clearing your cookies makes them untraceable here (they still redirect)",
+      "closeAriaLabel": "Dismiss the warning"
+    },
+    "charts": {
+      "dayOfWeek": {
+        "short": {
+          "sun": "S",
+          "mon": "M",
+          "tue": "T",
+          "wed": "W",
+          "thu": "T",
+          "fri": "F",
+          "sat": "S"
+        }
+      }
+    },
+    "dayOfWeekChart": {
+      "heading": "clicks per day, last 7 days"
+    },
+    "botToggle": {
+      "humans": "Humans",
+      "bots": "Bots",
+      "all": "All"
+    },
+    "linkList": {
+      "emptyStateTitle": "No links yet",
+      "emptyStateDescription": "The links you create will appear here, along with their click stats.",
+      "linkCount": "{count, plural, one {# link} other {# links}}",
+      "sortRecent": "Recent",
+      "sortPopular": "Popular"
+    },
+    "pages": {
+      "home": {
+        "dashboardLink": "dashboard",
+        "footerTrustCopy": "no IP stored · no tracking cookie · no account"
+      },
+      "dashboard": {
+        "heading": "dashboard"
+      },
+      "linkDetail": {
+        "backToDashboard": "← dashboard",
+        "createdOn": "created on {date}",
+        "noQrCode": "No QR code for a {status} link."
+      },
+      "interstitial": {
+        "heading": "You're about to be redirected",
+        "body": "This link leads to:",
+        "continueButton": "Continue →"
+      },
+      "linkNotFound": {
+        "heading": "Link not found",
+        "body": "This short link doesn't exist, has been disabled, or has expired."
+      },
+      "report": {
+        "heading": "Report a link"
+      },
+      "reportLinkAction": "Report this link"
+    }
   }
 }

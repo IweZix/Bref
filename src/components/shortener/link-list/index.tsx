@@ -1,14 +1,17 @@
 'use client';
 
 import { Button, HStack, Stack, Text } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { EmptyState } from '@/components/shortener/empty-state';
 import { LinkListItem } from '@/components/shortener/link-list-item';
 import type { DashboardLink } from '@/lib/shortener/get-dashboard-links';
+import { tKeys } from '@/localization/tKeys';
 
 type SortMode = 'recent' | 'popular';
 
 export function LinkList({ links }: { links: DashboardLink[] }) {
+  const t = useTranslations();
   const [sortMode, setSortMode] = useState<SortMode>('recent');
 
   const sortedLinks = useMemo(() => {
@@ -27,8 +30,8 @@ export function LinkList({ links }: { links: DashboardLink[] }) {
   if (links.length === 0) {
     return (
       <EmptyState
-        title="Aucun lien pour l'instant"
-        description="Les liens que tu crées apparaîtront ici, avec leurs statistiques de clics."
+        title={t(tKeys.shortener.linkList.emptyStateTitle)}
+        description={t(tKeys.shortener.linkList.emptyStateDescription)}
       />
     );
   }
@@ -37,7 +40,7 @@ export function LinkList({ links }: { links: DashboardLink[] }) {
     <Stack gap="4">
       <HStack justify="space-between">
         <Text fontFamily="mono" color="fg.muted">
-          {links.length} lien{links.length > 1 ? 's' : ''}
+          {t(tKeys.shortener.linkList.linkCount, { count: links.length })}
         </Text>
         <HStack gap="1">
           <Button
@@ -47,7 +50,7 @@ export function LinkList({ links }: { links: DashboardLink[] }) {
             fontFamily="mono"
             onClick={() => setSortMode('recent')}
           >
-            Récents
+            {t(tKeys.shortener.linkList.sortRecent)}
           </Button>
           <Button
             size="sm"
@@ -56,7 +59,7 @@ export function LinkList({ links }: { links: DashboardLink[] }) {
             fontFamily="mono"
             onClick={() => setSortMode('popular')}
           >
-            Populaires
+            {t(tKeys.shortener.linkList.sortPopular)}
           </Button>
         </HStack>
       </HStack>
