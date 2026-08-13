@@ -7,14 +7,17 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { resolveSlug } from '@/lib/shortener/resolve-slug';
 import { Link } from '@/localization/navigation';
+import { tKeys } from '@/localization/tKeys';
 
 export default async function InterstitialPage({
   searchParams,
 }: {
   searchParams: Promise<{ slug?: string; s?: string }>;
 }) {
+  const t = await getTranslations();
   const { slug, s } = await searchParams;
   if (!slug) notFound();
 
@@ -40,10 +43,10 @@ export default async function InterstitialPage({
           bg="app-bg"
         >
           <Heading fontFamily="mono" fontSize="lg">
-            Tu vas être redirigé
+            {t(tKeys.shortener.pages.interstitial.heading)}
           </Heading>
           <Text fontFamily="mono" color="fg.muted">
-            Ce lien mène vers :
+            {t(tKeys.shortener.pages.interstitial.body)}
           </Text>
           <Text fontFamily="mono" fontWeight="bold" truncate>
             {destinationHost}
@@ -54,10 +57,14 @@ export default async function InterstitialPage({
             fontWeight="bold"
             color="brand.fg"
           >
-            <a href={continueHref}>Continuer →</a>
+            <a href={continueHref}>
+              {t(tKeys.shortener.pages.interstitial.continueButton)}
+            </a>
           </ChakraLink>
           <ChakraLink asChild fontFamily="mono" fontSize="sm" color="fg.subtle">
-            <Link href={reportHref}>Signaler ce lien</Link>
+            <Link href={reportHref}>
+              {t(tKeys.shortener.pages.reportLinkAction)}
+            </Link>
           </ChakraLink>
         </Stack>
       </Container>

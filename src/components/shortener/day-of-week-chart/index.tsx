@@ -1,18 +1,35 @@
 import { Box, HStack, Stack, Text } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
+import { tKeys } from '@/localization/tKeys';
 
-const DAY_LABELS = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+type Translator = ReturnType<typeof useTranslations>;
+
+function getDayLabels(t: Translator): string[] {
+  return [
+    t(tKeys.shortener.charts.dayOfWeek.short.sun),
+    t(tKeys.shortener.charts.dayOfWeek.short.mon),
+    t(tKeys.shortener.charts.dayOfWeek.short.tue),
+    t(tKeys.shortener.charts.dayOfWeek.short.wed),
+    t(tKeys.shortener.charts.dayOfWeek.short.thu),
+    t(tKeys.shortener.charts.dayOfWeek.short.fri),
+    t(tKeys.shortener.charts.dayOfWeek.short.sat),
+  ];
+}
+
 const MAX_BAR_HEIGHT_PX = 64;
 
 export function DayOfWeekChart({ countsByDay }: { countsByDay: number[] }) {
+  const t = useTranslations();
+  const dayLabels = getDayLabels(t);
   const max = Math.max(1, ...countsByDay);
 
   return (
     <Stack gap="2">
       <Text fontFamily="mono" fontWeight="bold" fontSize="sm">
-        clics par jour, 7 derniers jours
+        {t(tKeys.shortener.dayOfWeekChart.heading)}
       </Text>
       <HStack align="flex-end" gap="3" h={`${MAX_BAR_HEIGHT_PX + 24}px`}>
-        {DAY_LABELS.map((label, index) => {
+        {dayLabels.map((label, index) => {
           const count = countsByDay[index] ?? 0;
           const height =
             count === 0

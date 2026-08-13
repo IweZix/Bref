@@ -1,13 +1,16 @@
 'use client';
 
 import { Button, type ButtonProps } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toaster } from '@/components/ui/toaster';
+import { tKeys } from '@/localization/tKeys';
 
 export function CopyButton({
   value,
   ...props
 }: { value: string } & Omit<ButtonProps, 'onClick'>) {
+  const t = useTranslations();
   const [justCopied, setJustCopied] = useState(false);
 
   async function handleCopy() {
@@ -15,14 +18,14 @@ export function CopyButton({
       await navigator.clipboard.writeText(value);
       setJustCopied(true);
       toaster.create({
-        description: 'Lien copié',
+        description: t(tKeys.shortener.copyButton.toastSuccess),
         type: 'success',
         duration: 2000,
       });
       setTimeout(() => setJustCopied(false), 1500);
     } catch {
       toaster.create({
-        description: 'Impossible de copier le lien',
+        description: t(tKeys.shortener.copyButton.toastError),
         type: 'error',
       });
     }
@@ -37,7 +40,9 @@ export function CopyButton({
       variant={justCopied ? 'outline' : 'solid'}
       {...props}
     >
-      {justCopied ? 'Copié !' : 'Copier'}
+      {justCopied
+        ? t(tKeys.shortener.copyButton.copied)
+        : t(tKeys.shortener.copyButton.copy)}
     </Button>
   );
 }

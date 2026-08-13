@@ -2,15 +2,19 @@
 
 import { Button, CloseButton, Dialog, Portal, Text } from '@chakra-ui/react';
 import { useMutation } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toaster } from '@/components/ui/toaster';
 import { useRouter } from '@/localization/navigation';
+import { tKeys } from '@/localization/tKeys';
 
-async function deleteLink(id: string): Promise<void> {
+type Translator = ReturnType<typeof useTranslations>;
+
+async function deleteLink(id: string, t: Translator): Promise<void> {
   const response = await fetch(`/api/links/${id}`, { method: 'DELETE' });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.error ?? 'Une erreur est survenue');
+    throw new Error(body.error ?? t(tKeys.common.errors.generic));
   }
 }
 
@@ -21,11 +25,12 @@ export function DeleteLinkButton({
   linkId: string;
   isCustomSlug: boolean;
 }) {
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
   const mutation = useMutation({
-    mutationFn: () => deleteLink(linkId),
+    mutationFn: () => deleteLink(linkId, t),
     onSuccess: () => {
       router.push('/dashboard');
     },
@@ -42,7 +47,7 @@ export function DeleteLinkButton({
     >
       <Dialog.Trigger asChild>
         <Button variant="ghost" colorPalette="red" fontFamily="mono" size="xs">
-          Supprimer
+          {t(tKeys.shortener.deleteLinkButton.trigger)}
         </Button>
       </Dialog.Trigger>
       <Portal>
@@ -50,19 +55,21 @@ export function DeleteLinkButton({
         <Dialog.Positioner>
           <Dialog.Content fontFamily="mono">
             <Dialog.Header>
-              <Dialog.Title>Supprimer ce lien ?</Dialog.Title>
+              <Dialog.Title>
+                {t(tKeys.shortener.deleteLinkButton.dialogTitle)}
+              </Dialog.Title>
             </Dialog.Header>
             <Dialog.Body>
               <Text color="fg.muted">
                 {isCustomSlug
-                  ? "Ce slug personnalisé sera retiré : personne d'autre ne pourra le reprendre, mais tu pourras le récupérer depuis cette session."
-                  : 'Ce lien sera définitivement supprimé.'}
+                  ? t(tKeys.shortener.deleteLinkButton.dialogBodyCustomSlug)
+                  : t(tKeys.shortener.deleteLinkButton.dialogBodyDefault)}
               </Text>
             </Dialog.Body>
             <Dialog.Footer>
               <Dialog.ActionTrigger asChild>
                 <Button variant="outline" fontFamily="mono">
-                  Annuler
+                  {t(tKeys.shortener.deleteLinkButton.cancel)}
                 </Button>
               </Dialog.ActionTrigger>
               <Button
@@ -71,7 +78,7 @@ export function DeleteLinkButton({
                 loading={mutation.isPending}
                 onClick={() => mutation.mutate()}
               >
-                Supprimer
+                {t(tKeys.shortener.deleteLinkButton.confirm)}
               </Button>
             </Dialog.Footer>
             <Dialog.CloseTrigger asChild>

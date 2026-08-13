@@ -1,4 +1,6 @@
 import { Box, HStack, Stack, Text } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
+import { tKeys } from '@/localization/tKeys';
 
 export type PercentageBarItem = {
   label: string;
@@ -12,6 +14,7 @@ export function PercentageBarList({
   title: string;
   items: PercentageBarItem[];
 }) {
+  const t = useTranslations();
   const total = items.reduce((sum, item) => sum + item.count, 0);
 
   if (items.length === 0) {
@@ -21,7 +24,7 @@ export function PercentageBarList({
           {title}
         </Text>
         <Text fontFamily="mono" fontSize="sm" color="fg.subtle">
-          Pas encore de données
+          {t(tKeys.shortener.percentageBarList.emptyState)}
         </Text>
       </Stack>
     );

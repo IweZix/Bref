@@ -5,6 +5,7 @@ import {
   Heading,
   HStack,
 } from '@chakra-ui/react';
+import { getTranslations } from 'next-intl/server';
 import { BrowserWarningBanner } from '@/components/shortener/browser-warning-banner';
 import { ExportLinksButton } from '@/components/shortener/export-links-button';
 import { LinkList } from '@/components/shortener/link-list';
@@ -12,8 +13,10 @@ import { ColorModeButton } from '@/components/ui/color-mode';
 import { getDashboardLinks } from '@/lib/shortener/get-dashboard-links';
 import { createClient } from '@/lib/supabase/server';
 import { Link } from '@/localization/navigation';
+import { tKeys } from '@/localization/tKeys';
 
 export default async function DashboardPage() {
+  const t = await getTranslations();
   const supabase = await createClient();
   const links = await getDashboardLinks(supabase);
 
@@ -41,7 +44,7 @@ export default async function DashboardPage() {
           wrap="wrap"
         >
           <Heading fontFamily="mono" fontSize="lg">
-            tableau de bord
+            {t(tKeys.shortener.pages.dashboard.heading)}
           </Heading>
           <ExportLinksButton />
         </HStack>

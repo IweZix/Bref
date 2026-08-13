@@ -1,12 +1,15 @@
 import { Container, Flex, Heading, Stack } from '@chakra-ui/react';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { ReportForm } from '@/components/shortener/report-form';
+import { tKeys } from '@/localization/tKeys';
 
 export default async function ReportPage({
   searchParams,
 }: {
   searchParams: Promise<{ slug?: string }>;
 }) {
+  const t = await getTranslations();
   const { slug } = await searchParams;
   if (!slug) notFound();
 
@@ -22,7 +25,7 @@ export default async function ReportPage({
           bg="app-bg"
         >
           <Heading fontFamily="mono" fontSize="lg">
-            Signaler un lien
+            {t(tKeys.shortener.pages.report.heading)}
           </Heading>
           <ReportForm slug={slug} />
         </Stack>
