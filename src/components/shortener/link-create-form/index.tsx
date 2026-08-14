@@ -6,10 +6,13 @@ import { useFormik } from 'formik';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { CopyButton } from '@/components/shortener/copy-button';
+import { CustomSlugQuotaMeter } from '@/components/shortener/custom-slug-quota-meter';
 import { TerminalInput } from '@/components/shortener/terminal-input';
 import { toaster } from '@/components/ui/toaster';
+import { useCustomSlugEligibility } from '@/hooks/useCustomSlugEligibility';
 import { normalizeSlug } from '@/lib/shortener/normalize-slug';
 import { validateSlugFormat } from '@/lib/shortener/validate-slug-format';
+import { Link } from '@/localization/navigation';
 import { tKeys } from '@/localization/tKeys';
 
 type CreatedLink = {
@@ -20,6 +23,7 @@ type CreatedLink = {
 type CreateLinkResponse = {
   link?: { slug: string; target_url: string };
   error?: string;
+  reason?: string;
 };
 
 type AvailabilityResponse = {
@@ -27,6 +31,16 @@ type AvailabilityResponse = {
   reason?: string;
   suggestions?: string[];
 };
+
+type EligibilityReason = 'requires-account' | 'quota-exceeded';
+
+class CreateLinkError extends Error {
+  reason?: string;
+  constructor(message: string, reason?: string) {
+    super(message);
+    this.reason = reason;
+  }
+}
 
 type Translator = ReturnType<typeof useTranslations>;
 
@@ -59,6 +73,12 @@ function getAvailabilityMessages(t: Translator): Record<string, string> {
       tKeys.shortener.linkCreateForm.availabilityErrors.brandMismatch,
     ),
     taken: t(tKeys.shortener.linkCreateForm.availabilityErrors.taken),
+    'requires-account': t(
+      tKeys.shortener.linkCreateForm.availabilityErrors.requiresAccount,
+    ),
+    'quota-exceeded': t(
+      tKeys.shortener.linkCreateForm.availabilityErrors.quotaExceeded,
+    ),
   };
 }
 
@@ -77,7 +97,10 @@ async function createLink(
   });
   const body: CreateLinkResponse = await response.json();
   if (!response.ok) {
-    throw new Error(body.error ?? t(tKeys.common.errors.generic));
+    throw new CreateLinkError(
+      body.error ?? t(tKeys.common.errors.generic),
+      body.reason,
+    );
   }
   return body;
 }
@@ -94,6 +117,7 @@ export function LinkCreateForm() {
   const t = useTranslations();
   const FORMAT_ERROR_MESSAGES = getFormatErrorMessages(t);
   const AVAILABILITY_MESSAGES = getAvailabilityMessages(t);
+  const eligibility = useCustomSlugEligibility();
 
   const [origin, setOrigin] = useState('');
   useEffect(() => setOrigin(window.location.origin), []);
@@ -103,6 +127,19 @@ export function LinkCreateForm() {
   const [createdLink, setCreatedLink] = useState<CreatedLink | null>(null);
   const [showCustomSlug, setShowCustomSlug] = useState(false);
   const [debouncedSlug, setDebouncedSlug] = useState('');
+  // Set only when the server rejects a custom-slug attempt for an
+  // eligibility reason (not a format/availability one) — surfaced inline,
+  // at the field, in the same gesture as the refusal, matching how
+  // availability errors already render. Anything else falls back to a toast.
+  const [submitEligibilityReason, setSubmitEligibilityReason] =
+    useState<EligibilityReason | null>(null);
+
+  // The hook only fetches /api/account/quota when the session is not
+  // anonymous, so a fetched `eligible: false` here can only be the
+  // quota-exceeded case — the requires-account case is covered by
+  // `eligibility.isAnonymous` directly, with no network round trip needed.
+  const isCustomSlugDisabled =
+    eligibility.isAnonymous || eligibility.data?.eligible === false;
 
   const mutation = useMutation({
     mutationFn: (params: {
@@ -120,7 +157,13 @@ export function LinkCreateForm() {
     },
     onError: (error: Error) => {
       setCreatedLink(null);
-      toaster.create({ description: error.message, type: 'error' });
+      const reason =
+        error instanceof CreateLinkError ? error.reason : undefined;
+      if (reason === 'requires-account' || reason === 'quota-exceeded') {
+        setSubmitEligibilityReason(reason);
+      } else {
+        toaster.create({ description: error.message, type: 'error' });
+      }
     },
   });
 
@@ -146,6 +189,7 @@ export function LinkCreateForm() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setDebouncedSlug(normalizeSlug(formik.values.slug));
+      setSubmitEligibilityReason(null);
     }, 400);
     return () => clearTimeout(timeout);
   }, [formik.values.slug]);
@@ -159,6 +203,7 @@ export function LinkCreateForm() {
     queryFn: () => checkAvailability(debouncedSlug),
     enabled:
       showCustomSlug &&
+      !isCustomSlugDisabled &&
       Boolean(debouncedSlug) &&
       (formatValidation?.valid ?? false),
     staleTime: 10_000,
@@ -208,9 +253,26 @@ export function LinkCreateForm() {
   }
 
   // Live-typing feedback, differentiated by cause per case — never a generic
-  // "invalid" message.
+  // "invalid" message. Eligibility (account/quota) takes priority over
+  // format/availability feedback: there's no point telling someone their
+  // slug looks fine if they can't create one at all yet.
   let slugFeedback: { text: string; color: string } | null = null;
-  if (
+  if (submitEligibilityReason) {
+    slugFeedback = {
+      text: AVAILABILITY_MESSAGES[submitEligibilityReason],
+      color: 'red.fg',
+    };
+  } else if (eligibility.isAnonymous) {
+    slugFeedback = {
+      text: AVAILABILITY_MESSAGES['requires-account'],
+      color: 'red.fg',
+    };
+  } else if (eligibility.data?.eligible === false) {
+    slugFeedback = {
+      text: AVAILABILITY_MESSAGES[eligibility.data.reason],
+      color: 'red.fg',
+    };
+  } else if (
     formik.values.slug.trim() &&
     formatValidation &&
     !formatValidation.valid
@@ -304,6 +366,7 @@ export function LinkCreateForm() {
                   )}
                   value={formik.values.slug}
                   onChange={formik.handleChange}
+                  disabled={isCustomSlugDisabled}
                 />
               </Box>
             </Stack>
@@ -311,6 +374,24 @@ export function LinkCreateForm() {
               <Text fontFamily="mono" fontSize="xs" color={slugFeedback.color}>
                 {slugFeedback.text}
               </Text>
+            )}
+            {eligibility.isAnonymous && (
+              <Link href="/account">
+                <Text
+                  fontFamily="mono"
+                  fontSize="xs"
+                  color="brand.fg"
+                  textDecoration="underline"
+                >
+                  {t(tKeys.shortener.linkCreateForm.createAccountCta)}
+                </Text>
+              </Link>
+            )}
+            {eligibility.data && !eligibility.data.isAnonymous && (
+              <CustomSlugQuotaMeter
+                used={eligibility.data.used}
+                quota={eligibility.data.quota}
+              />
             )}
             <Checkbox.Root
               size="sm"

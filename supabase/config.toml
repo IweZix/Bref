@@ -160,7 +160,10 @@ site_url = "http://127.0.0.1:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+# http (not just https) is required locally: emailRedirectTo targets used by
+# the account conversion / cross-device merge flow (src/components/account/)
+# point at the plain http origin `npm run dev` actually serves.
+additional_redirect_urls = ["https://127.0.0.1:3000", "http://127.0.0.1:3000"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -223,7 +226,17 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+# Load-bearing for the account-conversion security model (src/components/account/):
+# the links_custom_slug_requires_verified_account RLS policy trusts
+# is_anonymous = false as proof of a *confirmed* email. With this off, GoTrue
+# auto-confirms updateUser({ email }) immediately -- no verification step at
+# all -- which would let anyone claim custom slugs under any email address,
+# including one they don't own. Verified empirically: flipping this to
+# false makes a fresh anonymous session become is_anonymous = false the
+# instant updateUser() is called, with no confirmation link ever visited.
+# Must also be enabled in the deployed project's dashboard (Authentication →
+# Providers → Email → "Confirm email"), not just here.
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -247,6 +260,22 @@ otp_expiry = 3600
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
+
+# Custom templates for the account-conversion flow (src/components/account/).
+# The default (unmodified) templates link to Supabase's own hosted
+# /auth/v1/verify endpoint, which verifies server-side and redirects --
+# bypassing src/app/api/auth/confirm/route.ts entirely. These instead embed
+# {{ .TokenHash }} in a link to that route directly, per Supabase's
+# documented pattern for SSR apps. A deployed project needs the identical
+# customization applied via the dashboard (Authentication → Email
+# Templates), not just here -- this file only affects local dev.
+[auth.email.template.email_change]
+subject = "Confirm your new email address"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.magic_link]
+subject = "Sign in to bref."
+content_path = "./supabase/templates/magic_link.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

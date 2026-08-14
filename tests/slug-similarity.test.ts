@@ -39,6 +39,15 @@ describe.skipIf(!hasLocalStack)('checkSlugSimilarity', () => {
 
   let existingSlug: string;
 
+  // Seeded as a random (non-custom) slug: checkSlugSimilarity's
+  // degarnished_slug matching applies namespace-wide regardless of
+  // is_custom_slug, and inserting through the anonymous session's own
+  // client (as everywhere else in this suite) avoids the
+  // links_custom_slug_requires_verified_account RESTRICTIVE policy
+  // (supabase/migrations/20260814090500_...), which blocks an anonymous
+  // session from setting is_custom_slug = true -- irrelevant here, since
+  // this test is about the similarity check, not about who owns the row or
+  // what kind of slug it is.
   beforeAll(async () => {
     const anon = createClient(url, ANON_KEY as string);
     const { data: session } = await anon.auth.signInAnonymously();
@@ -49,7 +58,7 @@ describe.skipIf(!hasLocalStack)('checkSlugSimilarity', () => {
       slug: existingSlug,
       target_url: 'https://example.com/similarity',
       user_id: session.user.id,
-      is_custom_slug: true,
+      is_custom_slug: false,
     });
     if (error) throw new Error(`Setup insert failed: ${error.message}`);
   });

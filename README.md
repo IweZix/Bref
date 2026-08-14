@@ -56,7 +56,7 @@ using ((select auth.uid()) = user_id);
 
 — which means isolation between two visitors' links is enforced **by the database**, not by application code that a direct API call could bypass. `tests/rls-isolation.test.ts` verifies this by hitting the raw PostgREST endpoint with one session's token and asserting it can't read another's data, RLS policies and all.
 
-**The trade-off, stated plainly**: your links are tied to this browser. Clear your cookies, switch devices, or open a private window, and the dashboard can no longer find them — though the links themselves keep redirecting regardless, since resolving a slug never depends on who's asking. The dashboard has a dismissible notice about this and an export button, so you always have an out-of-band copy of your own links.
+**The trade-off, stated plainly**: your links are tied to this browser. Clear your cookies, switch devices, or open a private window, and the dashboard can no longer find them — though the links themselves keep redirecting regardless, since resolving a slug never depends on who's asking. The dashboard has a dismissible notice about this and an export button, so you always have an out-of-band copy of your own links. §9 below adds an opt-in way out of that trade-off — accounts remain optional, never required.
 
 The lower barrier to entry (one request, no verification) also means the abuse surface is larger than with real accounts — which is why rate limiting (§8 below) checks the session **and** a hashed IP fingerprint, not the session alone.
 
@@ -107,14 +107,63 @@ A QR scan leaves exactly one signal: the code encodes the short URL with `?s=qr`
 
 One more deliberate constraint: the QR's dark-module/light-background colors are hardcoded hex values in `src/lib/shortener/qr-options.ts`, never read from Chakra's theme tokens or `useColorMode()`. A QR code's black/white contrast is a scanning-reliability requirement, not a branding choice — it must render identically regardless of the visitor's OS or app theme.
 
+## 9. Optional accounts unlock custom slugs, without touching the anonymous default
+
+§7 identified the real threat model behind custom slugs: a public, scarce namespace invites squatting. The per-session cap of 5 helped, but "a session" is free — anyone gets one with zero verification. Requiring a real, verified account before a custom slug can be created moves the barrier from *one HTTP request* to *a working email address*, which is a meaningfully higher bar without asking every visitor to sign up.
+
+**Conversion, not migration.** Supabase can attach an email identity to an existing anonymous user (`supabase.auth.updateUser({ email })`, confirmed via a magic-link/OTP callback) instead of creating a new account and moving data over:
+
+```ts
+await supabase.auth.updateUser(
+  { email },
+  { emailRedirectTo: `${origin}/api/auth/confirm?next=/dashboard` },
+);
+```
+
+`auth.uid()` never changes. Every existing `links` row is already scoped to that same id, so the RLS policies in §4 keep working completely unmodified — no data migration, no ownership transfer, no window where a link belongs to nobody. This is *why* the feature is cheap: if an implementation needs to move rows between users for the base conversion case, that's a sign the wrong mechanism was picked.
+
+**A confirmed email is the same fact as `is_anonymous = false`.** Supabase leaves `is_anonymous` at `true` until the attached email is actually verified — so gating custom-slug creation on "not anonymous" *is* gating on "confirmed email," with no separate read of `email_confirmed_at` needed:
+
+```sql
+create policy "links_custom_slug_requires_verified_account"
+on public.links as restrictive
+for insert to authenticated
+with check (
+  is_custom_slug = false
+  or ((select auth.jwt()) ->> 'is_anonymous')::boolean is false
+);
+```
+
+A RESTRICTIVE policy is the right tool for this specific rule — it's a pure per-row check with no aggregate, so unlike the quota below it has no concurrency problem to solve, and it ANDs cleanly with the existing ownership policy without touching it.
+
+**The quota needed a trigger, not just another policy — for the same reason §7 avoids a pre-check `SELECT`.** A per-user cap is a *count*, and RLS `WITH CHECK` clauses evaluate against the same MVCC snapshot as any other read: two concurrent inserts at slot 5 of 5 can both see "4 used" and both proceed. Closing that means locking, and Postgres can't lock rows that don't exist yet — so `enforce_custom_slug_quota()` takes a transaction-scoped advisory lock keyed on the inserting user, serializing only *that user's* concurrent custom-slug inserts, and leaving every other user's inserts untouched:
+
+```sql
+perform pg_advisory_xact_lock(hashtextextended(new.user_id::text, 0));
+-- ...count existing custom links, compare against the resolved quota...
+if v_current_count >= v_quota then
+  raise exception '...' using errcode = 'BR002';
+end if;
+```
+
+`tests/concurrent-custom-slug-quota-boundary.test.ts` fires two real concurrent inserts at the last free slot and asserts exactly one wins — the same discipline §7's `tests/concurrent-custom-slug-creation.test.ts` already applies to the *slug* race, applied here to the *count* race.
+
+**Quota resolution has one source of truth on each side, not two hardcoded numbers.** `public.quota_tiers` holds the standard/premium defaults; a per-user `profiles.custom_slug_quota` overrides either. Both the trigger and `src/lib/shortener/custom-slug-quota.ts` read the same table — a TS constant can't be read from SQL and vice versa, so the table itself is the shared source, not a comment promising the two stay in sync.
+
+**`profiles.is_premium` has no write path from the browser, full stop.** RLS grants `authenticated` a `select` policy on its own row and nothing else — no insert, no update, no delete policy at all, the same "RLS on, zero policies for the untrusted role" idiom already used by `retired_slugs` and `rate_limits`. Only `service_role` (via a future billing webhook, or a manual `UPDATE` today, since there's no payment integration to simulate) can flip it. `tests/profiles-premium-write-protection.test.ts` is the test that matters most in this whole feature: it drives an UPDATE at the row from an anonymous session, a verified session, and a raw PostgREST PATCH, and asserts every single one is rejected.
+
+**Losing premium never touches existing links.** If `is_premium` flips back to `false` while a user holds more custom slugs than the standard quota allows, those links stay exactly as they are — only *new* custom-slug creation is blocked until the count is back under the limit. Deleting or disabling already-shared links because a flag changed would break real, working links for no correctness reason.
+
+**The cross-device case: two anonymous sessions, one email.** Someone converts on their laptop, then later opens the app on their phone (a *second*, unrelated anonymous session) and enters the same email. `updateUser({ email })` on the phone's session fails with `email_exists` — silently merging at that point would let a mistyped or guessed email pull someone else's links onto a stranger's account, and refusing outright would strand the phone's links with no explanation. Instead: the phone's session gets a magic link to *sign in* as the already-existing account, but before that sign-in swaps the active session, the phone captures a short-lived, single-use, service-role-issued token proving "this browser was authenticated as this specific anonymous user" (`public.pending_account_merges` — the same "RLS on, zero policies" idiom as above, since a client-supplied user id can never be trusted directly for a cross-account write). After signing in, `/account/merge` reads that token back out of `localStorage`, previews what it would move, and only transfers on explicit confirmation — random links unconditionally, custom links oldest-first up to whatever quota room the target account actually has. If the target doesn't have room for all of them, the transfer is **partial and reported**, never silently truncated: `tests/account-merge-respects-quota.test.ts` seeds a source with more custom links than the target has free slots and asserts the exact split between reassigned and skipped.
+
 ## What I'd do differently
 
 - **i18n.** The app's copy is hardcoded French rather than routed through `next-intl`'s `useTranslations()`, despite the rest of the codebase (and `CLAUDE.md`) documenting that as the convention. It was a deliberate scope cut to keep the core mechanics (redirect semantics, RLS, caching) the focus rather than touching every component twice. Rewiring ~15 components plus the `en.json` entries is the natural next PR.
 - **Detailed click history in the UI.** The mockups sketch a per-event timeline ("clicked from France, mobile, via slack.com, 18 min ago"); the shipped detail page aggregates into a day-of-week chart and country/referrer/device breakdowns instead. The data (`public.clicks`) already supports the richer view — it just wasn't built.
 - **Custom domains.** Explicitly out of scope for this pass, but the redirect route doesn't assume the app's own hostname anywhere except the self-redirect-loop check at creation time, so it wouldn't require restructuring.
-- **Anonymous → permanent account.** Supabase supports attaching an email to an anonymous session without losing its data. Worth offering as an opt-in once someone actually asks for it — never as a requirement, since that would undercut point 4 above.
 - **Report moderation.** `public.reports` collects abuse reports on custom slugs (§7), but there's no admin UI — reviewing them today means reading the table directly with SQL. The point was to prove the data-capture path exists (and that the underlying risk was thought through), not to build a moderation console for a portfolio project's low real-world volume.
 - **A reserved-word offensive-terms list.** `src/lib/shortener/reserved-slugs.ts` blocks app routes and impersonation-prone brand/financial terms, but deliberately carries no profanity list — a real one needs proper locale coverage and false-positive tuning, and a handful of hardcoded words would give a false sense of coverage without actually providing it.
+- **An admin UI for `profiles.is_premium`.** Flipping the flag today is a manual `UPDATE` via the service role or the dashboard — honest for a project with no billing integration, same reasoning as the reports table above.
 
 ## Running it locally
 
@@ -126,6 +175,7 @@ Copy `.env.config` to `.env.local` and fill in the Supabase values (`vercel env 
 
 1. **Anonymous sign-ins are off by default** in a new Supabase project. Enable them under **Authentication → Providers → Anonymous**, or nothing in this app will work — there's no code-level flag for this, it's purely a dashboard setting.
 2. `VISITOR_HASH_SECRET` and `RATE_LIMIT_HASH_SECRET` must be two **different** random values (`openssl rand -hex 32`) — see §5's note on why they're deliberately not the same secret.
+3. **Account conversion (§9) needs a real SMTP provider in production** — locally, the Supabase CLI's bundled Inbucket/Mailpit already captures every confirmation and magic-link email with no setup, but a deployed project needs `[auth.email.smtp]` configured (Authentication → Providers → Email → SMTP Settings in the dashboard) or those emails never send.
 
 ```bash
 npm run dev                   # local dev server

@@ -11,6 +11,30 @@
   "homepage": {
     "title": "This is the homepage"
   },
+  "account": {
+    "emailForm": {
+      "description": "Create an account to pick your own links and find them from any device.",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send confirmation link",
+      "checkEmailTitle": "Check your email",
+      "checkEmailBody": "We sent a confirmation link to {email}. Click it to finish creating your account — your existing links stay exactly as they are.",
+      "checkEmailBodyCrossDevice": "That email is already linked to an account. We sent a sign-in link to {email} — click it to continue, then you'll be able to bring this device's links along.",
+      "useDifferentEmail": "Use a different email",
+      "alreadyConverted": "You're signed in as {email}.",
+      "invalidLinkError": "That link is invalid or has expired. Enter your email again to get a new one."
+    },
+    "mergeConfirmation": {
+      "heading": "Bring this device's links along?",
+      "body": "{count, plural, one {# link was} other {# links were}} created on this device before you signed in. You can link them to your account, or leave them where they are.",
+      "quotaNote": "Your account doesn't have room for all of this device's custom links right now — some will stay on this device instead of being skipped silently.",
+      "confirm": "Link them to my account",
+      "decline": "Not now",
+      "resultReassigned": "{count, plural, one {# link was} other {# links were}} linked to your account.",
+      "resultSkipped": "{count, plural, one {# custom link} other {# custom links}} stayed on this device — your account's custom slug quota is full.",
+      "noPendingMerge": "There's nothing to link right now.",
+      "backToDashboard": "Go to dashboard"
+    }
+  },
   "shortener": {
     "clicksTimelineChart": {
       "emptyState": "No clicks to show yet",
@@ -22,6 +46,9 @@
     },
     "percentageBarList": {
       "emptyState": "No data yet"
+    },
+    "customSlugQuotaMeter": {
+      "label": "{used} / {quota} custom links"
     },
     "copyButton": {
       "toastSuccess": "Link copied",
@@ -52,7 +79,9 @@
         "tooSimilar": "this slug looks too similar to an existing link",
         "retired": "this slug has already been used and is no longer available",
         "brandMismatch": "this slug looks like a brand name but doesn't point to its real domain",
-        "taken": "already taken"
+        "taken": "already taken",
+        "requiresAccount": "create an account to pick your own links",
+        "quotaExceeded": "custom link quota reached — delete one to free a slot"
       },
       "resetButton": "Create another link",
       "slugFeedback": {
@@ -66,7 +95,8 @@
       "submit": "Shorten",
       "customizeToggle": "Customize the link",
       "slugPlaceholder": "my-link",
-      "interstitialCheckboxLabel": "Show a warning before redirecting"
+      "interstitialCheckboxLabel": "Show a warning before redirecting",
+      "createAccountCta": "Create an account to pick your own links and find them from any device →"
     },
     "exportLinksButton": {
       "filename": "my-links.json",
@@ -117,6 +147,7 @@
     },
     "browserWarningBanner": {
       "body": "tied to this browser, not an account — clearing your cookies makes them untraceable here (they still redirect)",
+      "createAccountCta": "Create an account to pick your own links and find them from any device →",
       "closeAriaLabel": "Dismiss the warning"
     },
     "charts": {
@@ -154,6 +185,12 @@
       },
       "dashboard": {
         "heading": "dashboard"
+      },
+      "account": {
+        "heading": "account"
+      },
+      "accountMerge": {
+        "heading": "link this device's links"
       },
       "linkDetail": {
         "backToDashboard": "← dashboard",

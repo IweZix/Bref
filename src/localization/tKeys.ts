@@ -11,6 +11,30 @@ export const tKeys = {
   homepage: {
     title: 'homepage.title',
   },
+  account: {
+    emailForm: {
+      description: 'account.emailForm.description',
+      emailPlaceholder: 'account.emailForm.emailPlaceholder',
+      submit: 'account.emailForm.submit',
+      checkEmailTitle: 'account.emailForm.checkEmailTitle',
+      checkEmailBody: 'account.emailForm.checkEmailBody',
+      checkEmailBodyCrossDevice: 'account.emailForm.checkEmailBodyCrossDevice',
+      useDifferentEmail: 'account.emailForm.useDifferentEmail',
+      alreadyConverted: 'account.emailForm.alreadyConverted',
+      invalidLinkError: 'account.emailForm.invalidLinkError',
+    },
+    mergeConfirmation: {
+      heading: 'account.mergeConfirmation.heading',
+      body: 'account.mergeConfirmation.body',
+      quotaNote: 'account.mergeConfirmation.quotaNote',
+      confirm: 'account.mergeConfirmation.confirm',
+      decline: 'account.mergeConfirmation.decline',
+      resultReassigned: 'account.mergeConfirmation.resultReassigned',
+      resultSkipped: 'account.mergeConfirmation.resultSkipped',
+      noPendingMerge: 'account.mergeConfirmation.noPendingMerge',
+      backToDashboard: 'account.mergeConfirmation.backToDashboard',
+    },
+  },
   shortener: {
     clicksTimelineChart: {
       emptyState: 'shortener.clicksTimelineChart.emptyState',
@@ -22,6 +46,9 @@ export const tKeys = {
     },
     percentageBarList: {
       emptyState: 'shortener.percentageBarList.emptyState',
+    },
+    customSlugQuotaMeter: {
+      label: 'shortener.customSlugQuotaMeter.label',
     },
     copyButton: {
       toastSuccess: 'shortener.copyButton.toastSuccess',
@@ -57,6 +84,10 @@ export const tKeys = {
         brandMismatch:
           'shortener.linkCreateForm.availabilityErrors.brandMismatch',
         taken: 'shortener.linkCreateForm.availabilityErrors.taken',
+        requiresAccount:
+          'shortener.linkCreateForm.availabilityErrors.requiresAccount',
+        quotaExceeded:
+          'shortener.linkCreateForm.availabilityErrors.quotaExceeded',
       },
       resetButton: 'shortener.linkCreateForm.resetButton',
       slugFeedback: {
@@ -73,6 +104,7 @@ export const tKeys = {
       slugPlaceholder: 'shortener.linkCreateForm.slugPlaceholder',
       interstitialCheckboxLabel:
         'shortener.linkCreateForm.interstitialCheckboxLabel',
+      createAccountCta: 'shortener.linkCreateForm.createAccountCta',
     },
     exportLinksButton: {
       filename: 'shortener.exportLinksButton.filename',
@@ -123,6 +155,7 @@ export const tKeys = {
     },
     browserWarningBanner: {
       body: 'shortener.browserWarningBanner.body',
+      createAccountCta: 'shortener.browserWarningBanner.createAccountCta',
       closeAriaLabel: 'shortener.browserWarningBanner.closeAriaLabel',
     },
     charts: {
@@ -160,6 +193,12 @@ export const tKeys = {
       },
       dashboard: {
         heading: 'shortener.pages.dashboard.heading',
+      },
+      account: {
+        heading: 'shortener.pages.account.heading',
+      },
+      accountMerge: {
+        heading: 'shortener.pages.accountMerge.heading',
       },
       linkDetail: {
         backToDashboard: 'shortener.pages.linkDetail.backToDashboard',
