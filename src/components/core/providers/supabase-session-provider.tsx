@@ -45,8 +45,20 @@ export default function SupabaseSessionProvider({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
+    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      if (newSession) {
+        setSession(newSession);
+        return;
+      }
+      // signOut() leaves no session at all -- immediately fall back to a
+      // fresh anonymous one so the "always authenticated, possibly
+      // anonymously" invariant the rest of the app depends on (RLS reads,
+      // the create-link form, /api/account/quota, ...) never breaks.
+      const { data: anonData, error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        console.error('Failed to create anonymous session', error);
+      }
+      setSession(anonData.session);
     });
 
     return () => {

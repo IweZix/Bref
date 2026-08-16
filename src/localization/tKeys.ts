@@ -111,6 +111,12 @@ export const tKeys = {
       exportError: 'shortener.exportLinksButton.exportError',
       button: 'shortener.exportLinksButton.button',
     },
+    logoutButton: {
+      button: 'shortener.logoutButton.button',
+    },
+    loginButton: {
+      button: 'shortener.loginButton.button',
+    },
     statusBadge: {
       active: 'shortener.statusBadge.active',
       disabled: 'shortener.statusBadge.disabled',

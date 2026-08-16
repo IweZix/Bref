@@ -1,9 +1,11 @@
-'use client';
+import { Flex } from '@chakra-ui/react';
+import { SiteHeader } from '@/components/core/site-header';
 
 export default function About() {
   return (
-    <div>
-      <h1 className="text-3xl font-bold underline">about</h1>
-    </div>
+    <Flex direction="column" minH="100vh">
+      <SiteHeader />
+      <h1>about</h1>
+    </Flex>
   );
 }

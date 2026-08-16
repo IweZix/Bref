@@ -103,6 +103,12 @@
       "exportError": "Impossible d'exporter les liens",
       "button": "Exporter mes liens"
     },
+    "logoutButton": {
+      "button": "Se déconnecter"
+    },
+    "loginButton": {
+      "button": "Se connecter"
+    },
     "statusBadge": {
       "active": "actif",
       "disabled": "désactivé",

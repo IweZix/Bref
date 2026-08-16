@@ -103,6 +103,12 @@
       "exportError": "Unable to export your links",
       "button": "Export my links"
     },
+    "logoutButton": {
+      "button": "Log out"
+    },
+    "loginButton": {
+      "button": "Log in"
+    },
     "statusBadge": {
       "active": "active",
       "disabled": "disabled",
