@@ -269,6 +269,36 @@ otp_expiry = 3600
 # documented pattern for SSR apps. A deployed project needs the identical
 # customization applied via the dashboard (Authentication → Email
 # Templates), not just here -- this file only affects local dev.
+#
+# The link base is {{ .RedirectTo }} (the caller's real origin, from
+# updateUser()/signInWithOtp()'s emailRedirectTo -- see account-email-form),
+# never {{ .SiteURL }} (a single project-wide dashboard setting). Using
+# SiteURL here would make every environment sharing one Supabase project
+# (local .env.local, DEV, PROD) redirect to whichever one happens to be
+# configured as the project's Site URL -- which is exactly the "email links
+# to localhost in DEV" bug this comment exists to prevent regressing.
+# {{ .RedirectTo }} only resolves correctly if that origin is on the
+# project's Redirect URLs allow-list (Authentication → URL Configuration) --
+# otherwise Supabase silently falls back to Site URL, reproducing the same
+# bug. Every environment's origin needs adding there -- this file only
+# controls the LOCAL CLI stack's own allow-list (additional_redirect_urls
+# above), never the shared remote project's; that has to be set by hand in
+# its dashboard. Do NOT try to sync it via `supabase config push` --
+# site_url/additional_redirect_urls in this file hold LOCAL values
+# (127.0.0.1) that would overwrite the remote project's real settings with
+# localhost, reintroducing the exact bug this section documents.
+#
+# DEV's Vercel deployments have no stable URL (a fresh git branch every
+# time, no custom domain), so the remote project's Redirect URLs allow-list
+# uses a wildcard instead of a fixed origin: `https://bref-*.vercel.app/**`
+# (the project's actual Vercel slug is "bref" -- see the VERCEL_OIDC_TOKEN
+# in .env.local, unrelated to package.json's stale "name" field). Trade-off
+# worth knowing: `*.vercel.app` isn't exclusively-owned namespace, so this
+# also matches any *other* Vercel project deliberately named `bref-...` --
+# a real but narrow phishing-redirect surface. A custom DEV domain (aliased
+# to whichever deployment is current) would close it entirely if this ever
+# needs to be more locked down; not done yet because low priority for a
+# portfolio project.
 [auth.email.template.email_change]
 subject = "Confirm your new email address"
 content_path = "./supabase/templates/email_change.html"
