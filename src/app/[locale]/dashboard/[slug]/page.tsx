@@ -9,13 +9,13 @@ import {
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
+import { SiteHeader } from '@/components/core/site-header';
 import { CopyButton } from '@/components/shortener/copy-button';
 import { DeleteLinkButton } from '@/components/shortener/delete-link-button';
 import { LinkDetailStats } from '@/components/shortener/link-detail-stats';
 import { LinkQrCode } from '@/components/shortener/link-qr-code';
 import { SlugTypeBadge } from '@/components/shortener/slug-type-badge';
 import { StatusBadge } from '@/components/shortener/status-badge';
-import { ColorModeButton } from '@/components/ui/color-mode';
 import { getLinkDetail } from '@/lib/shortener/get-link-detail';
 import { getLinkStatus } from '@/lib/shortener/link-status';
 import { createClient } from '@/lib/supabase/server';
@@ -46,18 +46,7 @@ export default async function LinkDetailPage({
 
   return (
     <Flex direction="column" minH="100vh">
-      <Flex
-        as="header"
-        justify="space-between"
-        align="center"
-        px={{ base: 4, md: 8 }}
-        py="5"
-      >
-        <ChakraLink asChild fontFamily="mono" fontWeight="bold" fontSize="xl">
-          <Link href="/">bref.</Link>
-        </ChakraLink>
-        <ColorModeButton />
-      </Flex>
+      <SiteHeader />
 
       <Container flex="1" maxW="3xl" pb="12">
         <ChakraLink

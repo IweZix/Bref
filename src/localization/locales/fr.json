@@ -11,6 +11,30 @@
   "homepage": {
     "title": "C'est la page d'accueil"
   },
+  "account": {
+    "emailForm": {
+      "description": "Crée un compte pour choisir tes propres liens et les retrouver depuis n'importe quel appareil.",
+      "emailPlaceholder": "toi@exemple.com",
+      "submit": "Envoyer le lien de confirmation",
+      "checkEmailTitle": "Vérifie tes e-mails",
+      "checkEmailBody": "On a envoyé un lien de confirmation à {email}. Clique dessus pour finaliser la création de ton compte — tes liens existants restent inchangés.",
+      "checkEmailBodyCrossDevice": "Cet e-mail est déjà lié à un compte. On a envoyé un lien de connexion à {email} — clique dessus pour continuer, tu pourras ensuite récupérer les liens de cet appareil.",
+      "useDifferentEmail": "Utiliser un autre e-mail",
+      "alreadyConverted": "Tu es connecté·e en tant que {email}.",
+      "invalidLinkError": "Ce lien est invalide ou a expiré. Saisis à nouveau ton e-mail pour en recevoir un nouveau."
+    },
+    "mergeConfirmation": {
+      "heading": "Récupérer les liens de cet appareil ?",
+      "body": "{count, plural, one {# lien a} other {# liens ont}} été créés sur cet appareil avant ta connexion. Tu peux les rattacher à ton compte, ou les laisser où ils sont.",
+      "quotaNote": "Ton compte n'a pas assez de place pour tous les liens personnalisés de cet appareil actuellement — certains resteront sur cet appareil plutôt que d'être ignorés silencieusement.",
+      "confirm": "Rattacher à mon compte",
+      "decline": "Pas maintenant",
+      "resultReassigned": "{count, plural, one {# lien a} other {# liens ont}} été rattachés à ton compte.",
+      "resultSkipped": "{count, plural, one {# lien personnalisé est resté} other {# liens personnalisés sont restés}} sur cet appareil — le quota de slugs personnalisés de ton compte est atteint.",
+      "noPendingMerge": "Il n'y a rien à rattacher pour le moment.",
+      "backToDashboard": "Aller au tableau de bord"
+    }
+  },
   "shortener": {
     "clicksTimelineChart": {
       "emptyState": "Pas encore de clics à afficher",
@@ -22,6 +46,9 @@
     },
     "percentageBarList": {
       "emptyState": "Pas encore de données"
+    },
+    "customSlugQuotaMeter": {
+      "label": "{used} / {quota} liens personnalisés"
     },
     "copyButton": {
       "toastSuccess": "Lien copié",
@@ -52,7 +79,9 @@
         "tooSimilar": "ce slug ressemble trop à un lien existant",
         "retired": "ce slug a déjà été utilisé et n'est plus disponible",
         "brandMismatch": "ce slug ressemble à une marque mais ne pointe pas vers son domaine réel",
-        "taken": "déjà pris"
+        "taken": "déjà pris",
+        "requiresAccount": "crée un compte pour choisir tes propres liens",
+        "quotaExceeded": "quota de liens personnalisés atteint — supprimes-en un pour libérer une place"
       },
       "resetButton": "Créer un autre lien",
       "slugFeedback": {
@@ -66,12 +95,19 @@
       "submit": "Raccourcir",
       "customizeToggle": "Personnaliser le lien",
       "slugPlaceholder": "mon-lien",
-      "interstitialCheckboxLabel": "Afficher un avertissement avant la redirection"
+      "interstitialCheckboxLabel": "Afficher un avertissement avant la redirection",
+      "createAccountCta": "Crée un compte pour choisir tes propres liens et les retrouver depuis n'importe quel appareil →"
     },
     "exportLinksButton": {
       "filename": "mes-liens.json",
       "exportError": "Impossible d'exporter les liens",
       "button": "Exporter mes liens"
+    },
+    "logoutButton": {
+      "button": "Se déconnecter"
+    },
+    "loginButton": {
+      "button": "Se connecter"
     },
     "statusBadge": {
       "active": "actif",
@@ -117,6 +153,7 @@
     },
     "browserWarningBanner": {
       "body": "rattachés à ce navigateur, pas à un compte — vider tes cookies les rend introuvables ici (ils redirigent toujours)",
+      "createAccountCta": "Crée un compte pour choisir tes propres liens et les retrouver depuis n'importe quel appareil →",
       "closeAriaLabel": "Fermer l'avertissement"
     },
     "charts": {
@@ -154,6 +191,12 @@
       },
       "dashboard": {
         "heading": "tableau de bord"
+      },
+      "account": {
+        "heading": "compte"
+      },
+      "accountMerge": {
+        "heading": "rattacher les liens de cet appareil"
       },
       "linkDetail": {
         "backToDashboard": "← tableau de bord",

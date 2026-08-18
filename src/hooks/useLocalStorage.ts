@@ -3,6 +3,11 @@ import { useEffect, useState } from 'react';
 export enum StorageKeys {
   TOKEN = 'token',
   DASHBOARD_WARNING_DISMISSED = 'dashboard_warning_dismissed',
+  // Proof-of-prior-session token for the cross-device account merge flow
+  // (src/components/account/account-email-form). Must survive the
+  // confirmation link opening in a new tab, so localStorage, not
+  // sessionStorage -- see src/app/[locale]/account/merge/page.tsx.
+  PENDING_ACCOUNT_MERGE_TOKEN = 'pending_account_merge_token',
 }
 
 export function useLocalStorage<T>(key: string, initialValue: T) {

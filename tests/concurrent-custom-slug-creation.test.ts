@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
 import { describe, expect, it } from 'vitest';
+import { createVerifiedUser } from './helpers/create-verified-user';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -22,30 +22,33 @@ const hasLocalStack = Boolean(SUPABASE_URL && ANON_KEY);
  * (catching 23505 -> 409, not 500) was verified manually. What matters for
  * this test is the invariant the database itself must uphold.
  *
+ * Uses a verified (non-anonymous) user rather than an anonymous session:
+ * the links_custom_slug_requires_verified_account RESTRICTIVE policy
+ * (supabase/migrations/20260814090500_...) added for the account/quota
+ * feature means an anonymous session can no longer create custom slugs at
+ * all, which would otherwise mask the actual race this test targets (a
+ * uniqueness collision, not the account-requirement rejection covered by
+ * tests/custom-slug-requires-account.test.ts).
+ *
  * Requires the local Supabase stack (see tests/rls-isolation.test.ts).
  */
 describe.skipIf(!hasLocalStack)('concurrent custom slug creation', () => {
-  const url = SUPABASE_URL as string;
-  const anonKey = ANON_KEY as string;
-
   it('exactly one of two concurrent inserts for the same slug succeeds', async () => {
-    const anon = createClient(url, anonKey);
-    const { data: session } = await anon.auth.signInAnonymously();
-    if (!session.user) throw new Error('Failed to create anonymous session');
+    const { userId, client } = await createVerifiedUser();
 
     const slug = `race-test-${crypto.randomUUID().slice(0, 8)}`;
 
     const [resultA, resultB] = await Promise.all([
-      anon.from('links').insert({
+      client.from('links').insert({
         slug,
         target_url: 'https://example.com/race-a',
-        user_id: session.user.id,
+        user_id: userId,
         is_custom_slug: true,
       }),
-      anon.from('links').insert({
+      client.from('links').insert({
         slug,
         target_url: 'https://example.com/race-b',
-        user_id: session.user.id,
+        user_id: userId,
         is_custom_slug: true,
       }),
     ]);

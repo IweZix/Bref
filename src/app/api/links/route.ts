@@ -1,5 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
+import { checkCustomSlugEligibility } from '@/lib/shortener/custom-slug-eligibility';
 import { checkCustomSlugRateLimit } from '@/lib/shortener/custom-slug-rate-limit';
 import { getClientIp } from '@/lib/shortener/geo';
 import { hashIp } from '@/lib/shortener/ip-hash';
@@ -13,11 +14,17 @@ import { validateDestinationUrl } from '@/lib/shortener/validate-destination';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 
-// "A handful" per the product decision: random slugs stay uncapped, custom
-// (human-chosen) slugs are capped per anonymous session to blunt squatting.
-const CUSTOM_SLUG_CAP_PER_SESSION = 5;
 const MAX_SLUG_GENERATION_ATTEMPTS = 3;
 const UNIQUE_VIOLATION = '23505';
+// Raised by enforce_custom_slug_quota() (supabase/migrations/20260814090400_...)
+// -- the DB-enforced, concurrency-safe replacement for the old app-level
+// SELECT-count-then-INSERT check.
+const CUSTOM_SLUG_QUOTA_EXCEEDED = 'BR002';
+// Raised by the links_custom_slug_requires_verified_account RESTRICTIVE
+// policy (supabase/migrations/20260814090500_...). It's the only
+// RESTRICTIVE policy touching links inserts today, so this code is a safe
+// inference -- revisit if that ever changes.
+const RESTRICTED_BY_RLS = '42501';
 
 const CUSTOM_SLUG_VALIDATION_ERRORS: Record<
   CustomSlugValidationReason,
@@ -29,6 +36,14 @@ const CUSTOM_SLUG_VALIDATION_ERRORS: Record<
   retired: 'This slug was previously used and is no longer available',
   'brand-mismatch':
     "This slug looks like it impersonates a brand but doesn't point to its real domain",
+};
+
+const CUSTOM_SLUG_ELIGIBILITY_ERRORS: Record<
+  'requires-account' | 'quota-exceeded',
+  string
+> = {
+  'requires-account': 'Creating a custom link requires a verified account',
+  'quota-exceeded': 'Custom slug quota reached',
 };
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -104,6 +119,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: attemptLimit.reason }, { status: 429 });
     }
 
+    // Fast pre-check mirroring the DB-enforced rules, so the common case
+    // never round-trips through a Postgres error. The insert below stays
+    // authoritative for the concurrent boundary case regardless.
+    const eligibility = await checkCustomSlugEligibility(supabase, user);
+    if (!eligibility.eligible) {
+      return NextResponse.json(
+        {
+          error: CUSTOM_SLUG_ELIGIBILITY_ERRORS[eligibility.reason],
+          reason: eligibility.reason,
+        },
+        { status: eligibility.reason === 'requires-account' ? 403 : 429 },
+      );
+    }
+
     const validation = await validateCustomSlugCandidate(
       createServiceClient(),
       body.slug,
@@ -112,31 +141,14 @@ export async function POST(request: Request) {
     );
     if (!validation.valid) {
       return NextResponse.json(
-        { error: CUSTOM_SLUG_VALIDATION_ERRORS[validation.reason] },
+        {
+          error: CUSTOM_SLUG_VALIDATION_ERRORS[validation.reason],
+          reason: validation.reason,
+        },
         { status: 400 },
       );
     }
     const requestedSlug = validation.slug;
-
-    const { count, error: countError } = await supabase
-      .from('links')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('is_custom_slug', true);
-    if (countError) {
-      return NextResponse.json(
-        { error: 'Failed to check custom slug quota' },
-        { status: 500 },
-      );
-    }
-    if ((count ?? 0) >= CUSTOM_SLUG_CAP_PER_SESSION) {
-      return NextResponse.json(
-        {
-          error: `Custom slug limit reached (${CUSTOM_SLUG_CAP_PER_SESSION} per session)`,
-        },
-        { status: 429 },
-      );
-    }
 
     const { data: link, error } = await insertLink(supabase, {
       slug: requestedSlug,
@@ -150,8 +162,26 @@ export async function POST(request: Request) {
     if (error) {
       if (error.code === UNIQUE_VIOLATION) {
         return NextResponse.json(
-          { error: 'This slug is already taken' },
+          { error: 'This slug is already taken', reason: 'taken' },
           { status: 409 },
+        );
+      }
+      if (error.code === CUSTOM_SLUG_QUOTA_EXCEEDED) {
+        return NextResponse.json(
+          {
+            error: CUSTOM_SLUG_ELIGIBILITY_ERRORS['quota-exceeded'],
+            reason: 'quota-exceeded',
+          },
+          { status: 429 },
+        );
+      }
+      if (error.code === RESTRICTED_BY_RLS) {
+        return NextResponse.json(
+          {
+            error: CUSTOM_SLUG_ELIGIBILITY_ERRORS['requires-account'],
+            reason: 'requires-account',
+          },
+          { status: 403 },
         );
       }
       return NextResponse.json(

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { checkCustomSlugEligibility } from '@/lib/shortener/custom-slug-eligibility';
 import { checkCustomSlugRateLimit } from '@/lib/shortener/custom-slug-rate-limit';
 import { getClientIp } from '@/lib/shortener/geo';
 import { hashIp } from '@/lib/shortener/ip-hash';
@@ -32,6 +33,14 @@ export async function GET(request: Request) {
   });
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: rateLimit.reason }, { status: 429 });
+  }
+
+  const eligibility = await checkCustomSlugEligibility(supabase, user);
+  if (!eligibility.eligible) {
+    return NextResponse.json({
+      available: false,
+      reason: eligibility.reason,
+    });
   }
 
   const slug = new URL(request.url).searchParams.get('slug');
